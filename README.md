@@ -1,6 +1,7 @@
 # 미니 쇼핑몰 (Mini Shopping Mall)
 
 Spring Boot로 구현한 풀스택 쇼핑몰 프로젝트입니다.
+- 배포 : https://mini-shoppingmall-production.up.railway.app/
 
 ## 🛠 기술 스택
 
