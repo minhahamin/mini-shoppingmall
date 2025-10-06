@@ -75,6 +75,30 @@ public class DatabaseConfig {
         if (springUrl != null) {
             System.out.println("SPRING_DATASOURCE_URL 사용: " + springUrl);
             
+            // SPRING_DATASOURCE_URL도 postgres:// 형식이면 변환
+            if (springUrl.startsWith("postgres://") || springUrl.startsWith("postgresql://")) {
+                try {
+                    URI dbUri = new URI(springUrl);
+                    String username = dbUri.getUserInfo().split(":")[0];
+                    String password = dbUri.getUserInfo().split(":")[1];
+                    String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ':' + dbUri.getPort() + dbUri.getPath();
+                    
+                    System.out.println("SPRING_DATASOURCE_URL 변환됨: " + jdbcUrl);
+                    System.out.println("Username: " + username);
+                    
+                    return DataSourceBuilder
+                            .create()
+                            .url(jdbcUrl)
+                            .username(username)
+                            .password(password)
+                            .driverClassName("org.postgresql.Driver")
+                            .build();
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException("Invalid SPRING_DATASOURCE_URL format: " + springUrl, e);
+                }
+            }
+            
+            // 이미 jdbc:postgresql:// 형식이면 그대로 사용
             return DataSourceBuilder
                     .create()
                     .url(springUrl)
