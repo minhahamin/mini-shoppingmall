@@ -3,7 +3,6 @@ package com.shoppingmall.controller;
 import com.shoppingmall.entity.Cart;
 import com.shoppingmall.entity.CartItem;
 import com.shoppingmall.entity.Order;
-import com.shoppingmall.entity.OrderItem;
 import com.shoppingmall.entity.User;
 import com.shoppingmall.service.CartService;
 import com.shoppingmall.service.OrderService;
@@ -12,6 +11,7 @@ import com.shoppingmall.service.UserService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,6 +30,9 @@ public class OrderController {
     private final CartService cartService;
     private final PaymentService paymentService;
     private final UserService userService;
+    
+    @Value("${app.base.url}")
+    private String baseUrl;
     
     // 주문서 페이지
     @GetMapping("/checkout")
@@ -99,8 +102,7 @@ public class OrderController {
             // 주문 생성
             Order order = orderService.createOrder(authentication.getName(), selectedItems, address, phone);
             
-            // Stripe 결제 세션 생성
-            String baseUrl = "http://localhost:8080";
+            // Stripe 결제 세션 생성 (환경에 맞는 URL 사용)
             Session session = paymentService.createCheckoutSession(
                     order,
                     baseUrl + "/order/success?session_id={CHECKOUT_SESSION_ID}",
