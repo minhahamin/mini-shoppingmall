@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,6 +13,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
     
@@ -28,10 +30,13 @@ public class SecurityConfig {
                     new AntPathRequestMatcher("/"),
                     new AntPathRequestMatcher("/register"),
                     new AntPathRequestMatcher("/login"),
+                    new AntPathRequestMatcher("/products"),
+                    new AntPathRequestMatcher("/products/**"),
                     new AntPathRequestMatcher("/css/**"),
                     new AntPathRequestMatcher("/js/**"),
                     new AntPathRequestMatcher("/images/**")
                 ).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/admin/**")).hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

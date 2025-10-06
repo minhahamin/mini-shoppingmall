@@ -22,10 +22,17 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username));
         
+        String role = "ROLE_" + user.getRole();
+        System.out.println("========================================");
+        System.out.println("로그인한 사용자: " + user.getUsername());
+        System.out.println("DB의 role: " + user.getRole());
+        System.out.println("부여된 권한: " + role);
+        System.out.println("========================================");
+        
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                Collections.singletonList(new SimpleGrantedAuthority(role))
         );
     }
 }

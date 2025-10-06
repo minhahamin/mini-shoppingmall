@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상품 관리 - 관리자</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall - 관리자</a>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="/admin/products">상품 관리</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout" style="cursor: pointer;">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h2 style="margin: 40px 0 20px 0;">상품 관리</h2>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div style="margin: 20px 0;">
+            <a href="/admin/products/new" class="btn-primary">+ 새 상품 등록</a>
+        </div>
+        
+        <div class="admin-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>상품명</th>
+                        <th>가격</th>
+                        <th>재고</th>
+                        <th>카테고리</th>
+                        <th>상태</th>
+                        <th>등록일</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="product : ${products}">
+                        <td th:text="${product.id}"></td>
+                        <td th:text="${product.name}"></td>
+                        <td th:text="|${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                        <td th:text="${product.stock}"></td>
+                        <td th:text="${product.category}"></td>
+                        <td>
+                            <span th:if="${product.available}" style="color: green;">판매중</span>
+                            <span th:unless="${product.available}" style="color: red;">판매중지</span>
+                        </td>
+                        <td th:text="${#temporals.format(product.createdAt, 'yyyy-MM-dd')}"></td>
+                        <td>
+                            <a th:href="@{/admin/products/{id}/edit(id=${product.id})}" class="btn-small btn-edit">수정</a>
+                            <form th:action="@{/admin/products/{id}/delete(id=${product.id})}" method="post" style="display: inline;" 
+                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                <button type="submit" class="btn-small btn-delete">삭제</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div th:if="${products.isEmpty()}" style="text-align: center; padding: 40px; color: #777;">
+            등록된 상품이 없습니다.
+        </div>
+    </div>
+</body>
+</html>
+
