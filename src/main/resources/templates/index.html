@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,18 +14,16 @@
             <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
             <nav class="nav-links">
                 <a href="/">홈</a>
-                <a href="#">상품</a>
-                <a href="#">카테고리</a>
-                <th:block th:if="${username != null}">
-                    <span style="color: white;">환영합니다, <strong th:text="${username}"></strong>님!</span>
-                    <a href="/products">상품보기</a>
-                    <a href="/admin/products" th:if="${isAdmin}">관리자</a>
+                <a href="/products">상품</a>
+                <th:block sec:authorize="isAuthenticated()">
+                    <a href="/cart">🛒 장바구니</a>
+                    <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
+                    <span style="color: white;">환영합니다, <strong sec:authentication="name"></strong>님!</span>
                     <form th:action="@{/logout}" method="post" style="display: inline;">
                         <button type="submit" class="btn-logout" style="cursor: pointer; border: 2px solid white; background-color: rgba(255,255,255,0.2); color: white; padding: 8px 20px; border-radius: 5px; font-weight: 500;">로그아웃</button>
                     </form>
                 </th:block>
-                <th:block th:if="${username == null}">
-                    <a href="/products">상품보기</a>
+                <th:block sec:authorize="!isAuthenticated()">
                     <a href="/login" class="btn-login">로그인</a>
                     <a href="/register">회원가입</a>
                 </th:block>
@@ -53,7 +52,7 @@
                 </div>
                 <div class="product-info">
                     <h3 th:text="${product.name}"></h3>
-                    <p class="product-price" th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + '원'"></p>
+                    <p class="product-price" th:text="|${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}원|"></p>
                     <p class="product-category" th:text="${product.category}"></p>
                     <a th:href="@{/products/{id}(id=${product.id})}" class="btn-view">자세히 보기</a>
                 </div>

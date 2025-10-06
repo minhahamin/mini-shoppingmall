@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장바구니 - 미니 쇼핑몰</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="/products">상품</a>
+                <a href="/cart">장바구니</a>
+                <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout" style="cursor: pointer;">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Cart Content -->
+    <div class="container" style="margin-top: 40px;">
+        <h2 style="margin-bottom: 30px;">장바구니</h2>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div th:if="${cart.items.isEmpty()}" style="text-align: center; padding: 80px 20px;">
+            <p style="font-size: 1.2rem; color: #999; margin-bottom: 20px;">장바구니가 비어있습니다</p>
+            <a href="/products" class="btn-primary">쇼핑 계속하기</a>
+        </div>
+        
+        <div th:unless="${cart.items.isEmpty()}">
+            <div class="admin-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>상품 이미지</th>
+                            <th>상품명</th>
+                            <th>가격</th>
+                            <th>수량</th>
+                            <th>소계</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item : ${cart.items}">
+                            <td>
+                                <img th:src="${item.product.imageUrl != null ? item.product.imageUrl : 'https://via.placeholder.com/80x80'}" 
+                                     th:alt="${item.product.name}"
+                                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;" />
+                            </td>
+                            <td>
+                                <a th:href="@{/products/{id}(id=${item.product.id})}" 
+                                   style="color: #667eea; text-decoration: none; font-weight: 500;">
+                                    <span th:text="${item.product.name}"></span>
+                                </a>
+                            </td>
+                            <td th:text="|${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                            <td>
+                                <form th:action="@{/cart/update/{id}(id=${item.id})}" method="post" style="display: inline-flex; align-items: center; gap: 10px;">
+                                    <input type="number" name="quantity" th:value="${item.quantity}" 
+                                           min="1" th:max="${item.product.stock}"
+                                           style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 3px;">
+                                    <button type="submit" class="btn-small btn-edit">변경</button>
+                                </form>
+                            </td>
+                            <td th:text="|${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')}원|" style="font-weight: bold;"></td>
+                            <td>
+                                <form th:action="@{/cart/remove/{id}(id=${item.id})}" method="post" style="display: inline;"
+                                      onsubmit="return confirm('이 상품을 장바구니에서 삭제하시겠습니까?');">
+                                    <button type="submit" class="btn-small btn-delete">삭제</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="margin-bottom: 10px;">총 결제 금액</h3>
+                        <p style="font-size: 2rem; color: #667eea; font-weight: bold; margin: 0;">
+                            <span th:text="|${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <form th:action="@{/cart/clear}" method="post" 
+                              onsubmit="return confirm('장바구니를 비우시겠습니까?');">
+                            <button type="submit" class="btn-small btn-delete" style="padding: 12px 24px; font-size: 1rem;">
+                                장바구니 비우기
+                            </button>
+                        </form>
+                        <a href="/products" class="btn-small btn-edit" style="padding: 12px 24px; font-size: 1rem; text-decoration: none;">
+                            쇼핑 계속하기
+                        </a>
+                        <button class="btn-primary" style="padding: 12px 40px; font-size: 1rem;">
+                            주문하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
