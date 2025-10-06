@@ -54,6 +54,10 @@ public class Product {
     @Builder.Default
     private Boolean available = true;
     
+    @Column(nullable = false, name = "sales_count")
+    @Builder.Default
+    private Integer salesCount = 0;
+    
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

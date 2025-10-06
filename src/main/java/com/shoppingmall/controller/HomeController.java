@@ -30,12 +30,13 @@ public class HomeController {
             model.addAttribute("isAdmin", isAdmin);
         }
         
-        // 최신 상품 표시
-        List<Product> products = productService.getAvailableProducts();
-        if (products.size() > 6) {
-            products = products.subList(0, 6);
-        }
-        model.addAttribute("products", products);
+        // 인기 상품 Top 3 (판매량 순)
+        List<Product> topProducts = productService.getTopSellingProducts();
+        model.addAttribute("topProducts", topProducts);
+        
+        // 나머지 최신 상품 (최대 6개)
+        List<Product> latestProducts = productService.getLatestProducts(6);
+        model.addAttribute("latestProducts", latestProducts);
         
         return "index";
     }

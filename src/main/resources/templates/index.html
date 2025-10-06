@@ -43,24 +43,49 @@
 
     <!-- Main Content -->
     <div class="container">
-        <h2 style="text-align: center; margin: 40px 0; color: #667eea;">인기 상품</h2>
-        
-        <div class="product-grid" th:if="${products != null and !products.isEmpty()}">
-            <div class="product-card" th:each="product : ${products}">
-                <div class="product-image">
-                    <img th:src="${product.imageUrl != null ? product.imageUrl : 'https://via.placeholder.com/250x200?text=' + product.name}" 
-                         th:alt="${product.name}" />
-                </div>
-                <div class="product-info">
-                    <h3 th:text="${product.name}"></h3>
-                    <p class="product-price" th:text="|${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}원|"></p>
-                    <p class="product-category" th:text="${product.category}"></p>
-                    <a th:href="@{/products/{id}(id=${product.id})}" class="btn-view">자세히 보기</a>
+        <!-- 인기 상품 Top 3 -->
+        <div th:if="${topProducts != null and !topProducts.isEmpty()}">
+            <h2 style="text-align: center; margin: 40px 0; color: #667eea;">🏆 인기 상품 TOP 3</h2>
+            <div class="product-grid" style="max-width: 900px; margin: 0 auto;">
+                <div class="product-card popular-product" th:each="product, iterStat : ${topProducts}">
+                    <div class="rank-badge" th:text="${iterStat.index + 1}"></div>
+                    <div class="product-image">
+                        <img th:src="${product.imageUrl != null ? product.imageUrl : 'https://via.placeholder.com/250x200?text=' + product.name}" 
+                             th:alt="${product.name}" />
+                    </div>
+                    <div class="product-info">
+                        <h3 th:text="${product.name}"></h3>
+                        <p class="product-price" th:text="|${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}원|"></p>
+                        <p class="product-category" th:text="${product.category}"></p>
+                        <p style="color: #f39c12; font-size: 0.9rem; font-weight: 500;">
+                            ⭐ <span th:text="${product.salesCount}"></span>개 판매
+                        </p>
+                        <a th:href="@{/products/{id}(id=${product.id})}" class="btn-view">자세히 보기</a>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div style="text-align: center; margin-top: 30px;">
+        <!-- 최신 상품 -->
+        <div th:if="${latestProducts != null and !latestProducts.isEmpty()}">
+            <h2 style="text-align: center; margin: 60px 0 40px 0; color: #667eea;">최신 상품</h2>
+            <div class="product-grid">
+                <div class="product-card" th:each="product : ${latestProducts}">
+                    <div class="product-image">
+                        <img th:src="${product.imageUrl != null ? product.imageUrl : 'https://via.placeholder.com/250x200?text=' + product.name}" 
+                             th:alt="${product.name}" />
+                    </div>
+                    <div class="product-info">
+                        <h3 th:text="${product.name}"></h3>
+                        <p class="product-price" th:text="|${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}원|"></p>
+                        <p class="product-category" th:text="${product.category}"></p>
+                        <a th:href="@{/products/{id}(id=${product.id})}" class="btn-view">자세히 보기</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px;">
             <a href="/products" class="btn-explore">모든 상품 보기</a>
         </div>
     </div>

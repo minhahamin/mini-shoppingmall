@@ -100,7 +100,7 @@ public class OrderService {
             return;
         }
         
-        // 재고 차감
+        // 재고 차감 및 판매량 증가
         for (OrderItem orderItem : order.getItems()) {
             Product product = orderItem.getProduct();
             
@@ -111,6 +111,10 @@ public class OrderService {
             
             // 재고 감소
             product.setStock(product.getStock() - orderItem.getQuantity());
+            
+            // 판매량 증가
+            product.setSalesCount(product.getSalesCount() + orderItem.getQuantity());
+            
             productRepository.save(product);
         }
         

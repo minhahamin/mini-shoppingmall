@@ -81,5 +81,16 @@ public class ProductService {
     public List<Product> searchProducts(String keyword) {
         return productRepository.findByNameContainingIgnoreCase(keyword);
     }
+    
+    @Transactional(readOnly = true)
+    public List<Product> getTopSellingProducts() {
+        return productRepository.findTop3ByAvailableTrueOrderBySalesCountDesc();
+    }
+    
+    @Transactional(readOnly = true)
+    public List<Product> getLatestProducts(int limit) {
+        List<Product> products = productRepository.findByAvailableTrueOrderByCreatedAtDesc();
+        return products.size() > limit ? products.subList(0, limit) : products;
+    }
 }
 
