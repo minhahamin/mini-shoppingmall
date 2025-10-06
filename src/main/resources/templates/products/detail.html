@@ -15,6 +15,7 @@
             <nav class="nav-links">
                 <a href="/">홈</a>
                 <a href="/products">상품</a>
+                <a href="/wishlist" sec:authorize="isAuthenticated()">💝 찜</a>
                 <a href="/cart" sec:authorize="isAuthenticated()">🛒 장바구니</a>
                 <a href="/order/history" sec:authorize="isAuthenticated()">주문내역</a>
                 <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
@@ -29,7 +30,23 @@
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
         <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative;">
+            <!-- 찜 하트 아이콘 -->
+            <div sec:authorize="isAuthenticated()" style="position: absolute; top: 20px; right: 20px; z-index: 10;">
+                <form th:if="${!isWished}" th:action="@{/wishlist/add/{id}(id=${product.id})}" method="post" style="display: inline;">
+                    <input type="hidden" name="returnUrl" th:value="'/products/' + ${product.id}" />
+                    <button type="submit" class="wishlist-heart">
+                        ♡
+                    </button>
+                </form>
+                <form th:if="${isWished}" th:action="@{/wishlist/remove/{id}(id=${product.id})}" method="post" style="display: inline;">
+                    <input type="hidden" name="returnUrl" th:value="'/products/' + ${product.id}" />
+                    <button type="submit" class="wishlist-heart active">
+                        ♥
+                    </button>
+                </form>
+            </div>
+            
             <div>
                 <img th:src="${product.imageUrl != null ? product.imageUrl : 'https://via.placeholder.com/500x400?text=' + product.name}" 
                      th:alt="${product.name}"
@@ -56,6 +73,7 @@
                 </div>
                 
                 <div style="margin-top: 30px;">
+                    <!-- 장바구니 담기 -->
                     <form th:action="@{/cart/add}" method="post">
                         <input type="hidden" name="productId" th:value="${product.id}" />
                         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
@@ -66,7 +84,7 @@
                         <button type="submit" class="btn-primary" 
                                 style="width: 100%; padding: 15px; font-size: 1.1rem;" 
                                 th:disabled="${!product.available or product.stock == 0}">
-                            장바구니 담기
+                            🛒 장바구니 담기
                         </button>
                     </form>
                 </div>

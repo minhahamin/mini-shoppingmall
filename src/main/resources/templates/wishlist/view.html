@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>찜 목록 - 미니 쇼핑몰</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="/products">상품</a>
+                <a href="/wishlist">💝 찜</a>
+                <a href="/cart">🛒 장바구니</a>
+                <a href="/order/history">주문내역</a>
+                <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Wishlist Content -->
+    <div class="container" style="margin-top: 40px;">
+        <h2 style="margin-bottom: 30px;">💝 찜 목록</h2>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div th:if="${wishlist.isEmpty()}" style="text-align: center; padding: 80px 20px;">
+            <p style="font-size: 1.2rem; color: #999; margin-bottom: 20px;">찜한 상품이 없습니다</p>
+            <a href="/products" class="btn-primary">쇼핑하러 가기</a>
+        </div>
+        
+        <div th:unless="${wishlist.isEmpty()}" class="product-grid">
+            <div class="product-card" th:each="item : ${wishlist}">
+                <div class="product-image">
+                    <img th:src="${item.product.imageUrl != null ? item.product.imageUrl : 'https://via.placeholder.com/250x200'}" 
+                         th:alt="${item.product.name}" />
+                </div>
+                <div class="product-info">
+                    <h3 th:text="${item.product.name}"></h3>
+                    <p class="product-price" th:text="|${#numbers.formatDecimal(item.product.price, 0, 'COMMA', 0, 'POINT')}원|"></p>
+                    <p class="product-category" th:text="${item.product.category}"></p>
+                    <p style="color: #888; font-size: 0.9rem;">재고: <span th:text="${item.product.stock}"></span>개</p>
+                    
+                    <div style="display: flex; gap: 5px; margin-top: 10px;">
+                        <a th:href="@{/products/{id}(id=${item.product.id})}" class="btn-view" style="flex: 1; text-align: center;">상세보기</a>
+                        <form th:action="@{/wishlist/remove/{id}(id=${item.product.id})}" method="post" style="flex: 0;">
+                            <input type="hidden" name="returnUrl" value="/wishlist" />
+                            <button type="submit" class="btn-small btn-delete" style="padding: 10px 15px;">삭제</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

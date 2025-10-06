@@ -2,7 +2,9 @@ package com.shoppingmall.controller;
 
 import com.shoppingmall.entity.Product;
 import com.shoppingmall.service.ProductService;
+import com.shoppingmall.service.WishlistService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,7 @@ import java.util.List;
 public class ProductController {
     
     private final ProductService productService;
+    private final WishlistService wishlistService;
     
     @GetMapping
     public String productList(@RequestParam(required = false) String search, Model model) {
@@ -35,9 +38,18 @@ public class ProductController {
     }
     
     @GetMapping("/{id}")
-    public String productDetail(@PathVariable Long id, Model model) {
+    public String productDetail(@PathVariable Long id, 
+                               Authentication authentication, 
+                               Model model) {
         Product product = productService.getProduct(id);
         model.addAttribute("product", product);
+        
+        // 찜 여부 확인
+        if (authentication != null && authentication.isAuthenticated()) {
+            boolean isWished = wishlistService.isInWishlist(authentication.getName(), id);
+            model.addAttribute("isWished", isWished);
+        }
+        
         return "products/detail";
     }
 }
