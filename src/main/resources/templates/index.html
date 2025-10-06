@@ -15,20 +15,13 @@
             <nav class="nav-links">
                 <a href="/">홈</a>
                 <a href="/products">상품</a>
-                <th:block sec:authorize="isAuthenticated()">
-                    <a href="/wishlist">💝 찜</a>
-                    <a href="/cart">🛒 장바구니</a>
-                    <a href="/order/history">주문내역</a>
-                    <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
-                    <span style="color: white;">환영합니다, <strong sec:authentication="name"></strong>님!</span>
-                    <form th:action="@{/logout}" method="post" style="display: inline;">
-                        <button type="submit" class="btn-logout">로그아웃</button>
-                    </form>
-                </th:block>
-                <th:block sec:authorize="!isAuthenticated()">
-                    <a href="/login" class="btn-login">로그인</a>
-                    <a href="/register">회원가입</a>
-                </th:block>
+                <a href="/mypage" sec:authorize="isAuthenticated()">👤 마이페이지</a>
+                <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
+                <a href="/login" sec:authorize="!isAuthenticated()" class="btn-login">로그인</a>
+                <a href="/register" sec:authorize="!isAuthenticated()">회원가입</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
             </nav>
         </div>
     </header>

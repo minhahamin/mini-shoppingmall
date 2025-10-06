@@ -15,9 +15,7 @@
             <nav class="nav-links">
                 <a href="/">홈</a>
                 <a href="/products">상품</a>
-                <a href="/wishlist" sec:authorize="isAuthenticated()">💝 찜</a>
-                <a href="/cart" sec:authorize="isAuthenticated()">🛒 장바구니</a>
-                <a href="/order/history" sec:authorize="isAuthenticated()">주문내역</a>
+                <a href="/mypage" sec:authorize="isAuthenticated()">👤 마이페이지</a>
                 <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
                 <a href="/login" sec:authorize="!isAuthenticated()" class="btn-login">로그인</a>
                 <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">

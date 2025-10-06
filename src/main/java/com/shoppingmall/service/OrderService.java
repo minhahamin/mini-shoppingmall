@@ -132,12 +132,20 @@ public class OrderService {
                 .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
     }
     
-    // 사용자 주문 목록 조회
+    // 사용자 주문 목록 조회 (모든 주문)
     @Transactional(readOnly = true)
     public List<Order> getUserOrders(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
         return orderRepository.findByUserOrderByCreatedAtDesc(user);
+    }
+    
+    // 사용자 결제 완료 주문 목록 조회
+    @Transactional(readOnly = true)
+    public List<Order> getUserPaidOrders(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+        return orderRepository.findByUserAndStatusOrderByCreatedAtDesc(user, Order.OrderStatus.PAID);
     }
     
     // 주문 상세 조회

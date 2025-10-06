@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .requestMatchers(new AntPathRequestMatcher("/cart/**")).authenticated()
                 .requestMatchers(new AntPathRequestMatcher("/order/**")).authenticated()
                 .requestMatchers(new AntPathRequestMatcher("/wishlist/**")).authenticated()
+                .requestMatchers(new AntPathRequestMatcher("/mypage/**")).authenticated()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

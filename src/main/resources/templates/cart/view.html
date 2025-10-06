@@ -15,9 +15,7 @@
             <nav class="nav-links">
                 <a href="/">홈</a>
                 <a href="/products">상품</a>
-                <a href="/wishlist">💝 찜</a>
-                <a href="/cart">장바구니</a>
-                <a href="/order/history">주문내역</a>
+                <a href="/mypage">👤 마이페이지</a>
                 <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
                 <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
                     <button type="submit" class="btn-logout">로그아웃</button>

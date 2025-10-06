@@ -15,9 +15,7 @@
             <nav class="nav-links">
                 <a href="/">홈</a>
                 <a href="/products">상품</a>
-                <a href="/wishlist">💝 찜</a>
-                <a href="/cart">🛒 장바구니</a>
-                <a href="/order/history">주문내역</a>
+                <a href="/mypage">👤 마이페이지</a>
                 <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
                 <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
                     <button type="submit" class="btn-logout">로그아웃</button>
@@ -50,11 +48,11 @@
                     <p class="product-category" th:text="${item.product.category}"></p>
                     <p style="color: #888; font-size: 0.9rem;">재고: <span th:text="${item.product.stock}"></span>개</p>
                     
-                    <div style="display: flex; gap: 5px; margin-top: 10px;">
+                    <div style="display: flex; gap: 5px; margin-top: 10px; white-space: nowrap;">
                         <a th:href="@{/products/{id}(id=${item.product.id})}" class="btn-view" style="flex: 1; text-align: center;">상세보기</a>
                         <form th:action="@{/wishlist/remove/{id}(id=${item.product.id})}" method="post" style="flex: 0;">
                             <input type="hidden" name="returnUrl" value="/wishlist" />
-                            <button type="submit" class="btn-small btn-delete" style="padding: 10px 15px;">삭제</button>
+                            <button type="submit" class="btn-small btn-delete" style="padding: 10px 15px; white-space: nowrap;">삭제</button>
                         </form>
                     </div>
                 </div>

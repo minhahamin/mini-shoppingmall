@@ -136,14 +136,19 @@ public class CartService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
     
-    // 장바구니 항목 수 계산
+    // 장바구니 아이템 개수
     @Transactional(readOnly = true)
     public int getCartItemCount(String username) {
         try {
-            Cart cart = getOrCreateCart(username);
-            return cart.getItems().stream()
-                    .mapToInt(CartItem::getQuantity)
-                    .sum();
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user == null) {
+                return 0;
+            }
+            Cart cart = cartRepository.findByUser(user).orElse(null);
+            if (cart == null) {
+                return 0;
+            }
+            return cart.getItems().size();
         } catch (Exception e) {
             return 0;
         }
