@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미니 쇼핑몰 - 홈</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="#">상품</a>
+                <a href="#">카테고리</a>
+                <th:block th:if="${username != null}">
+                    <span style="color: white;">환영합니다, <strong th:text="${username}"></strong>님!</span>
+                    <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="btn-logout" style="cursor: pointer; border: 2px solid white; background-color: rgba(255,255,255,0.2); color: white; padding: 8px 20px; border-radius: 5px; font-weight: 500;">로그아웃</button>
+                    </form>
+                </th:block>
+                <th:block th:if="${username == null}">
+                    <a href="/login" class="btn-login">로그인</a>
+                    <a href="/register">회원가입</a>
+                </th:block>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Banner -->
+    <section class="banner">
+        <div class="banner-content">
+            <h1>최고의 쇼핑 경험을 제공합니다</h1>
+            <p>다양한 상품과 특별한 할인 혜택을 만나보세요!</p>
+            <a href="#" class="btn-explore">쇼핑 시작하기</a>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h2 style="text-align: center; margin: 40px 0; color: #667eea;">인기 상품</h2>
+        <p style="text-align: center; color: #777;">준비 중입니다...</p>
+    </div>
+</body>
+</html>
+
