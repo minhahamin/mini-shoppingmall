@@ -32,6 +32,7 @@ public class AdminController {
     @GetMapping("/products/new")
     public String createProductForm(Model model) {
         model.addAttribute("product", new ProductDto());
+        model.addAttribute("isEdit", false);
         return "admin/product-form";
     }
     

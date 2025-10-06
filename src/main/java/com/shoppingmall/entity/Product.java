@@ -43,7 +43,7 @@ public class Product {
     @Builder.Default
     private Integer stock = 0;
     
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
     
     @Column(nullable = false)
