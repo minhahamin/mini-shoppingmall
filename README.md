@@ -363,7 +363,7 @@ java -jar target/mini-shoppingmall-1.0.0.jar
 
 ### 관리자 계정
 - **아이디**: admin
-- **비밀번호**: 1234 (배포 시 반드시 변경 필요!)
+- **비밀번호**: 123456 (배포 시 반드시 변경 필요!)
 
 ### 일반 회원
 - 회원가입 필요 (http://localhost:8080/register)
