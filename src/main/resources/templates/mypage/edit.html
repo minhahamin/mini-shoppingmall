@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원정보 수정 - 미니 쇼핑몰</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="/products">상품</a>
+                <a href="/mypage">👤 마이페이지</a>
+                <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Edit Profile Content -->
+    <div class="container" style="max-width: 600px; margin-top: 40px;">
+        <h2 style="margin-bottom: 30px;">회원정보 수정</h2>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <form th:action="@{/mypage/update}" method="post">
+                <!-- 기본 정보 -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #667eea; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #667eea;">
+                        기본 정보
+                    </h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">
+                            아이디 (변경 불가)
+                        </label>
+                        <input type="text" th:value="${user.username}" disabled 
+                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem; background-color: #f5f5f5;" />
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">
+                            이름 *
+                        </label>
+                        <input type="text" name="name" th:value="${user.name}" required
+                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem;" />
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">
+                            이메일 *
+                        </label>
+                        <input type="email" name="email" th:value="${user.email}" required
+                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem;" />
+                    </div>
+                </div>
+                
+                <!-- 배송 정보 -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #667eea; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #667eea;">
+                        배송 정보
+                    </h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">
+                            전화번호
+                        </label>
+                        <input type="tel" name="phoneNumber" th:value="${user.phoneNumber}" 
+                               placeholder="010-1234-5678"
+                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem;" />
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">
+                            배송 주소
+                        </label>
+                        <textarea name="address" th:text="${user.address}" rows="3"
+                                  placeholder="예: 서울시 강남구 테헤란로 123"
+                                  style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem; resize: vertical;"></textarea>
+                        <p style="color: #666; font-size: 0.9rem; margin-top: 5px;">
+                            * 주문 시 자동으로 입력됩니다
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 비밀번호 변경 -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #667eea; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #667eea;">
+                        비밀번호 변경 (선택)
+                    </h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">
+                            현재 비밀번호
+                        </label>
+                        <input type="password" name="currentPassword"
+                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem;" />
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">
+                            새 비밀번호
+                        </label>
+                        <input type="password" name="newPassword"
+                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem;" />
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">
+                            새 비밀번호 확인
+                        </label>
+                        <input type="password" name="confirmPassword"
+                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem;" />
+                    </div>
+                </div>
+                
+                <!-- 버튼 -->
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn-primary" style="flex: 1;">
+                        저장하기
+                    </button>
+                    <a href="/mypage" class="btn-primary" style="flex: 1; text-align: center; background: #6c757d; display: inline-block;">
+                        취소
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+

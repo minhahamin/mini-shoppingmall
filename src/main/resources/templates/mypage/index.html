@@ -135,6 +135,10 @@
 
     <!-- MyPage Content -->
     <div class="mypage-container">
+        <!-- Alert Messages -->
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
         <!-- Header -->
         <div class="mypage-header">
             <h1>👤 마이페이지</h1>
@@ -174,7 +178,12 @@
         
         <!-- User Info -->
         <div class="info-section">
-            <h2>회원 정보</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">회원 정보</h2>
+                <a href="/mypage/edit" style="padding: 8px 20px; background-color: #667eea; color: white; text-decoration: none; border-radius: 5px; font-size: 0.9rem; font-weight: 500;">
+                    ✏️ 수정
+                </a>
+            </div>
             <div class="info-item">
                 <div class="info-label">이름</div>
                 <div class="info-value" th:text="${user.name}"></div>
@@ -188,12 +197,33 @@
                 <div class="info-value" th:text="${user.email}"></div>
             </div>
             <div class="info-item">
+                <div class="info-label">전화번호</div>
+                <div class="info-value">
+                    <span th:if="${user.phoneNumber != null and !user.phoneNumber.isEmpty()}" th:text="${user.phoneNumber}"></span>
+                    <span th:if="${user.phoneNumber == null or user.phoneNumber.isEmpty()}" style="color: #999;">미등록</span>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">배송 주소</div>
+                <div class="info-value">
+                    <span th:if="${user.address != null and !user.address.isEmpty()}" th:text="${user.address}"></span>
+                    <span th:if="${user.address == null or user.address.isEmpty()}" style="color: #999;">미등록</span>
+                </div>
+            </div>
+            <div class="info-item">
                 <div class="info-label">회원등급</div>
                 <div class="info-value">
                     <span th:if="${user.role.toString() == 'ADMIN'}" style="color: #e74c3c; font-weight: bold;">관리자</span>
                     <span th:if="${user.role.toString() == 'USER'}" style="color: #3498db; font-weight: bold;">일반회원</span>
                 </div>
             </div>
+        </div>
+        
+        <!-- 회원 탈퇴 -->
+        <div style="text-align: center; margin-top: 40px; padding: 20px;">
+            <a href="/mypage/delete" style="color: #999; text-decoration: none; font-size: 0.9rem;">
+                회원 탈퇴
+            </a>
         </div>
     </div>
 </body>

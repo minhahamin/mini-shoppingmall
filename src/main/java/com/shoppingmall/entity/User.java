@@ -42,6 +42,12 @@ public class User {
     @Column(nullable = false)
     private String name;
     
+    @Column(length = 500)
+    private String address;
+    
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+    
     @Column(nullable = false)
     private String role = "USER";
     

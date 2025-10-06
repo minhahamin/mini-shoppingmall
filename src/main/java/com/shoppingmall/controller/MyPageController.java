@@ -1,5 +1,6 @@
 package com.shoppingmall.controller;
 
+import com.shoppingmall.dto.UserUpdateDto;
 import com.shoppingmall.entity.User;
 import com.shoppingmall.entity.Wishlist;
 import com.shoppingmall.service.CartService;
@@ -10,8 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -50,6 +51,69 @@ public class MyPageController {
         model.addAttribute("orderCount", orderCount);
         
         return "mypage/index";
+    }
+    
+    @GetMapping("/edit")
+    public String editProfile(Authentication authentication, Model model) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        
+        User user = userService.getUserByUsername(authentication.getName());
+        model.addAttribute("user", user);
+        
+        return "mypage/edit";
+    }
+    
+    @PostMapping("/update")
+    public String updateProfile(@ModelAttribute UserUpdateDto updateDto,
+                               Authentication authentication,
+                               RedirectAttributes redirectAttributes) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        
+        try {
+            userService.updateUser(authentication.getName(), updateDto);
+            redirectAttributes.addFlashAttribute("success", "회원정보가 수정되었습니다");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/mypage/edit";
+        }
+        
+        return "redirect:/mypage";
+    }
+    
+    @GetMapping("/delete")
+    public String deleteAccountPage(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        
+        return "mypage/delete";
+    }
+    
+    @PostMapping("/delete/confirm")
+    public String deleteAccount(@RequestParam String password,
+                               Authentication authentication,
+                               RedirectAttributes redirectAttributes,
+                               jakarta.servlet.http.HttpServletRequest request) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        
+        try {
+            userService.deleteUser(authentication.getName(), password);
+            
+            // 세션 무효화
+            request.getSession().invalidate();
+            
+            redirectAttributes.addFlashAttribute("success", "회원 탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사합니다.");
+            return "redirect:/";
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/mypage/delete";
+        }
     }
 }
 

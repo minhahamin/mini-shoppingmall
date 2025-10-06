@@ -4,9 +4,11 @@ import com.shoppingmall.entity.Cart;
 import com.shoppingmall.entity.CartItem;
 import com.shoppingmall.entity.Order;
 import com.shoppingmall.entity.OrderItem;
+import com.shoppingmall.entity.User;
 import com.shoppingmall.service.CartService;
 import com.shoppingmall.service.OrderService;
 import com.shoppingmall.service.PaymentService;
+import com.shoppingmall.service.UserService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class OrderController {
     private final OrderService orderService;
     private final CartService cartService;
     private final PaymentService paymentService;
+    private final UserService userService;
     
     // 주문서 페이지
     @GetMapping("/checkout")
@@ -56,11 +59,15 @@ public class OrderController {
             return "redirect:/cart";
         }
         
+        // 사용자 정보 불러오기 (배송 정보 자동 입력)
+        User user = userService.getUserByUsername(authentication.getName());
+        
         model.addAttribute("items", selectedItems);
         model.addAttribute("total", selectedItems.stream()
                 .map(CartItem::getSubtotal)
                 .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add));
         model.addAttribute("stripePublicKey", paymentService.getPublicKey());
+        model.addAttribute("user", user);
         
         return "order/checkout";
     }

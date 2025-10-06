@@ -26,6 +26,10 @@
         </div>
     </header>
 
+    <!-- Alert Messages -->
+    <div th:if="${success}" class="alert alert-success" style="margin: 20px auto; max-width: 1200px;" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-error" style="margin: 20px auto; max-width: 1200px;" th:text="${error}"></div>
+
     <!-- Banner -->
     <section class="banner">
         <div class="banner-content">
