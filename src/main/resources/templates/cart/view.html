@@ -19,7 +19,7 @@
                 <a href="/order/history">주문내역</a>
                 <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
                 <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="btn-logout" style="cursor: pointer;">로그아웃</button>
+                    <button type="submit" class="btn-logout">로그아웃</button>
                 </form>
             </nav>
         </div>

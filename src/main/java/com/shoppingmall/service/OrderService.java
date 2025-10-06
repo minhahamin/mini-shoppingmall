@@ -2,6 +2,7 @@ package com.shoppingmall.service;
 
 import com.shoppingmall.entity.*;
 import com.shoppingmall.repository.OrderRepository;
+import com.shoppingmall.repository.ProductRepository;
 import com.shoppingmall.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,14 +21,26 @@ public class OrderService {
     
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
     
-    // 주문 생성
+    // 주문 생성 (재고 확인만)
     public Order createOrder(String username, List<CartItem> cartItems, String address, String phone) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
         
         if (cartItems.isEmpty()) {
             throw new IllegalArgumentException("주문할 상품이 없습니다");
+        }
+        
+        // 재고 사전 확인
+        for (CartItem cartItem : cartItems) {
+            Product product = cartItem.getProduct();
+            if (!product.getAvailable()) {
+                throw new IllegalArgumentException(product.getName() + "은(는) 판매 중지된 상품입니다");
+            }
+            if (product.getStock() < cartItem.getQuantity()) {
+                throw new IllegalArgumentException(product.getName() + "의 재고가 부족합니다 (남은 재고: " + product.getStock() + "개)");
+            }
         }
         
         // 주문 번호 생성
@@ -70,11 +83,31 @@ public class OrderService {
         return "ORD-" + date + "-" + random;
     }
     
-    // 결제 완료 처리
+    // 결제 완료 처리 및 재고 차감
     public void markAsPaid(Long orderId, String paymentIntentId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
         
+        // 이미 결제 완료된 주문이면 재고 차감 스킵
+        if (order.getStatus() == Order.OrderStatus.PAID) {
+            return;
+        }
+        
+        // 재고 차감
+        for (OrderItem orderItem : order.getItems()) {
+            Product product = orderItem.getProduct();
+            
+            // 재고 확인
+            if (product.getStock() < orderItem.getQuantity()) {
+                throw new IllegalArgumentException(product.getName() + "의 재고가 부족합니다");
+            }
+            
+            // 재고 감소
+            product.setStock(product.getStock() - orderItem.getQuantity());
+            productRepository.save(product);
+        }
+        
+        // 주문 상태 업데이트
         order.setStatus(Order.OrderStatus.PAID);
         order.setPaymentIntentId(paymentIntentId);
         order.setPaidAt(LocalDateTime.now());

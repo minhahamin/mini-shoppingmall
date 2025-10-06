@@ -20,7 +20,7 @@
                 <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
                 <a href="/login" sec:authorize="!isAuthenticated()" class="btn-login">로그인</a>
                 <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="btn-logout" style="cursor: pointer;">로그아웃</button>
+                    <button type="submit" class="btn-logout">로그아웃</button>
                 </form>
             </nav>
         </div>
