@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Controller
 @RequestMapping("/cart")
@@ -83,6 +84,22 @@ public class CartController {
         return "redirect:/cart";
     }
     
+    // 선택한 항목들 삭제
+    @PostMapping("/remove-selected")
+    public String removeSelectedItems(@RequestParam List<Long> itemIds,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            for (Long itemId : itemIds) {
+                cartService.removeFromCart(itemId);
+            }
+            redirectAttributes.addFlashAttribute("success", itemIds.size() + "개 상품이 삭제되었습니다");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        
+        return "redirect:/cart";
+    }
+    
     // 장바구니 비우기
     @PostMapping("/clear")
     public String clearCart(Authentication authentication,
@@ -95,4 +112,3 @@ public class CartController {
         return "redirect:/cart";
     }
 }
-

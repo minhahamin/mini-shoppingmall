@@ -27,13 +27,33 @@
 
     <!-- Search Bar -->
     <div class="container" style="margin-top: 30px;">
-        <form action="/products" method="get" style="text-align: center;">
-            <input type="text" name="search" th:value="${search}" 
-                   placeholder="상품을 검색하세요..." 
-                   style="padding: 12px; width: 400px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 1rem;">
-            <button type="submit" class="btn-primary" style="margin-left: 10px;">검색</button>
+        <form action="/products" method="get" id="searchForm" style="text-align: center;">
+            <input type="text" name="search" id="searchInput" th:value="${search}" 
+                   placeholder="상품을 검색하세요... (자동검색)" 
+                   oninput="autoSearch()"
+                   style="padding: 12px; width: 450px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 1rem;">
+            <a href="/products" th:if="${search != null}" class="btn-primary" style="margin-left: 10px; text-decoration: none;">✕ 초기화</a>
         </form>
     </div>
+    
+    <script>
+        let searchTimeout;
+        
+        function autoSearch() {
+            clearTimeout(searchTimeout);
+            
+            searchTimeout = setTimeout(() => {
+                const form = document.getElementById('searchForm');
+                const searchInput = document.getElementById('searchInput');
+                
+                if (searchInput.value.trim() === '') {
+                    window.location.href = '/products';
+                } else {
+                    form.submit();
+                }
+            }, 500);
+        }
+    </script>
 
     <!-- Products -->
     <div class="container">

@@ -41,6 +41,9 @@
                 <table>
                     <thead>
                         <tr>
+                            <th style="width: 50px;">
+                                <input type="checkbox" id="selectAll" onclick="toggleSelectAll()" />
+                            </th>
                             <th>상품 이미지</th>
                             <th>상품명</th>
                             <th>가격</th>
@@ -50,7 +53,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="item : ${cart.items}">
+                        <tr th:each="item : ${cart.items}" onclick="toggleRowCheckbox(event, this)" style="cursor: pointer;">
+                            <td onclick="event.stopPropagation();">
+                                <input type="checkbox" class="item-checkbox" th:value="${item.id}" 
+                                       onclick="event.stopPropagation(); updateSelectedTotal()" />
+                            </td>
                             <td>
                                 <img th:src="${item.product.imageUrl != null ? item.product.imageUrl : 'https://via.placeholder.com/80x80'}" 
                                      th:alt="${item.product.name}"
@@ -63,7 +70,7 @@
                                 </a>
                             </td>
                             <td th:text="|${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}원|"></td>
-                            <td>
+                            <td onclick="event.stopPropagation();">
                                 <form th:action="@{/cart/update/{id}(id=${item.id})}" method="post" style="display: inline-flex; align-items: center; gap: 10px;">
                                     <input type="number" name="quantity" th:value="${item.quantity}" 
                                            min="1" th:max="${item.product.stock}"
@@ -71,8 +78,10 @@
                                     <button type="submit" class="btn-small btn-edit">변경</button>
                                 </form>
                             </td>
-                            <td th:text="|${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')}원|" style="font-weight: bold;"></td>
-                            <td>
+                            <td th:text="|${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')}원|" 
+                                style="font-weight: bold;" 
+                                th:data-price="${item.subtotal}"></td>
+                            <td onclick="event.stopPropagation();">
                                 <form th:action="@{/cart/remove/{id}(id=${item.id})}" method="post" style="display: inline;"
                                       onsubmit="return confirm('이 상품을 장바구니에서 삭제하시겠습니까?');">
                                     <button type="submit" class="btn-small btn-delete">삭제</button>
@@ -86,22 +95,22 @@
             <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <h3 style="margin-bottom: 10px;">총 결제 금액</h3>
+                        <h3 style="margin-bottom: 10px;">선택 상품 금액</h3>
                         <p style="font-size: 2rem; color: #667eea; font-weight: bold; margin: 0;">
-                            <span th:text="|${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                            <span id="selectedTotal">0</span>원
+                        </p>
+                        <p style="font-size: 0.9rem; color: #888; margin-top: 5px;">
+                            전체 금액: <span th:text="|${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT')}원|"></span>
                         </p>
                     </div>
-                    <div style="display: flex; gap: 10px;">
-                        <form th:action="@{/cart/clear}" method="post" 
-                              onsubmit="return confirm('장바구니를 비우시겠습니까?');">
-                            <button type="submit" class="btn-small btn-delete" style="padding: 12px 24px; font-size: 1rem;">
-                                장바구니 비우기
-                            </button>
-                        </form>
-                        <a href="/products" class="btn-small btn-edit" style="padding: 12px 24px; font-size: 1rem; text-decoration: none;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button onclick="deleteSelected()" style="padding: 12px 24px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; font-weight: 500;">
+                            선택 삭제
+                        </button>
+                        <a href="/products" style="padding: 12px 24px; background-color: #888; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; font-weight: 500; text-decoration: none; display: inline-block;">
                             쇼핑 계속하기
                         </a>
-                        <button class="btn-primary" style="padding: 12px 40px; font-size: 1rem;">
+                        <button onclick="orderSelected()" style="padding: 12px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1rem; font-weight: 600;">
                             주문하기
                         </button>
                     </div>
@@ -109,6 +118,111 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        // 행 클릭 시 체크박스 토글
+        function toggleRowCheckbox(event, row) {
+            // 버튼이나 링크를 클릭한 경우는 무시
+            if (event.target.tagName === 'BUTTON' || 
+                event.target.tagName === 'A' || 
+                event.target.tagName === 'INPUT') {
+                return;
+            }
+            
+            const checkbox = row.querySelector('.item-checkbox');
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                updateSelectedTotal();
+            }
+        }
+        
+        // 전체 선택/해제
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            updateSelectedTotal();
+        }
+        
+        // 선택된 항목의 총 금액 계산
+        function updateSelectedTotal() {
+            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+            let total = 0;
+            
+            checkboxes.forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                const priceCell = row.querySelector('td[data-price]');
+                if (priceCell) {
+                    total += parseFloat(priceCell.dataset.price);
+                }
+            });
+            
+            // 천단위 콤마 추가
+            document.getElementById('selectedTotal').textContent = 
+                total.toLocaleString('ko-KR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            
+            // 전체 선택 체크박스 상태 업데이트
+            const allCheckboxes = document.querySelectorAll('.item-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            selectAllCheckbox.checked = allCheckboxes.length > 0 && 
+                                        checkboxes.length === allCheckboxes.length;
+        }
+        
+        // 선택된 항목 삭제
+        function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+            
+            if (checkboxes.length === 0) {
+                alert('삭제할 상품을 선택해주세요');
+                return;
+            }
+            
+            if (!confirm(`선택한 ${checkboxes.length}개 상품을 삭제하시겠습니까?`)) {
+                return;
+            }
+            
+            const itemIds = Array.from(checkboxes).map(cb => cb.value);
+            
+            // 폼 생성하여 서버로 전송
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/cart/remove-selected';
+            
+            itemIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'itemIds';
+                input.value = id;
+                form.appendChild(input);
+            });
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        // 선택된 항목 주문
+        function orderSelected() {
+            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+            
+            if (checkboxes.length === 0) {
+                alert('주문할 상품을 선택해주세요');
+                return;
+            }
+            
+            const itemIds = Array.from(checkboxes).map(cb => cb.value);
+            
+            // 주문 기능은 아직 미구현
+            alert(`${checkboxes.length}개 상품 주문 기능은 준비 중입니다`);
+            // TODO: 주문 기능 구현 시 여기에 코드 추가
+        }
+        
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSelectedTotal();
+        });
+    </script>
 </body>
 </html>
 

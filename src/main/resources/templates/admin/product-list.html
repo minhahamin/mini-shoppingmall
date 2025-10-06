@@ -29,8 +29,25 @@
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
         <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
         
-        <div style="margin: 20px 0;">
-            <a href="/admin/products/new" class="btn-primary">+ 새 상품 등록</a>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0;">
+            <div>
+                <a href="/admin/products/new" class="btn-primary">+ 새 상품 등록</a>
+            </div>
+            <div>
+                <form action="/admin/products" method="get" id="searchForm" style="display: inline-flex; gap: 10px;">
+                    <input type="text" name="search" id="searchInput" th:value="${search}" 
+                           placeholder="상품명 검색... (자동검색)" 
+                           oninput="autoSearch()"
+                           style="padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; width: 300px;">
+                    <a href="/admin/products" th:if="${search != null}" class="btn-primary" style="margin: 0; background: #888; text-decoration: none; display: inline-block; padding: 10px 20px;">✕ 초기화</a>
+                </form>
+            </div>
+        </div>
+        
+        <div style="margin: 10px 0; color: #666;">
+            <p>전체 <strong th:text="${totalItems}"></strong>개 상품 
+               (페이지 <strong th:text="${currentPage + 1}"></strong> / <strong th:text="${totalPages}"></strong>)
+            </p>
         </div>
         
         <div class="admin-table">
@@ -60,8 +77,10 @@
                         </td>
                         <td th:text="${#temporals.format(product.createdAt, 'yyyy-MM-dd')}"></td>
                         <td>
-                            <a th:href="@{/admin/products/{id}/edit(id=${product.id})}" class="btn-small btn-edit">수정</a>
-                            <form th:action="@{/admin/products/{id}/delete(id=${product.id})}" method="post" style="display: inline;" 
+                            <a th:href="@{/admin/products/{id}/edit(id=${product.id}, page=${currentPage}, size=${pageSize})}" 
+                               class="btn-small btn-edit">수정</a>
+                            <form th:action="@{/admin/products/{id}/delete(id=${product.id}, page=${currentPage}, size=${pageSize})}" 
+                                  method="post" style="display: inline;" 
                                   onsubmit="return confirm('정말 삭제하시겠습니까?');">
                                 <button type="submit" class="btn-small btn-delete">삭제</button>
                             </form>
@@ -72,9 +91,83 @@
         </div>
         
         <div th:if="${products.isEmpty()}" style="text-align: center; padding: 40px; color: #777;">
-            등록된 상품이 없습니다.
+            <p th:if="${search != null}">검색 결과가 없습니다.</p>
+            <p th:if="${search == null}">등록된 상품이 없습니다.</p>
+        </div>
+        
+        <!-- Pagination -->
+        <div th:if="${!products.isEmpty()}" style="margin: 30px 0; text-align: center;">
+            <div class="pagination" th:if="${totalPages > 1}">
+                <!-- 처음 페이지 -->
+                <a th:href="@{/admin/products(page=0, size=${pageSize}, search=${search})}" 
+                   th:classappend="${currentPage == 0} ? 'disabled' : ''"
+                   class="page-link">처음</a>
+                
+                <!-- 이전 페이지 -->
+                <a th:href="@{/admin/products(page=${currentPage - 1}, size=${pageSize}, search=${search})}" 
+                   th:classappend="${currentPage == 0} ? 'disabled' : ''"
+                   class="page-link">이전</a>
+                
+                <!-- 페이지 번호 -->
+                <th:block th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                    <a th:if="${i >= currentPage - 2 and i <= currentPage + 2}"
+                       th:href="@{/admin/products(page=${i}, size=${pageSize}, search=${search})}" 
+                       th:text="${i + 1}"
+                       th:classappend="${i == currentPage} ? 'active' : ''"
+                       class="page-link"></a>
+                </th:block>
+                
+                <!-- 다음 페이지 -->
+                <a th:href="@{/admin/products(page=${currentPage + 1}, size=${pageSize}, search=${search})}" 
+                   th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''"
+                   class="page-link">다음</a>
+                
+                <!-- 마지막 페이지 -->
+                <a th:href="@{/admin/products(page=${totalPages - 1}, size=${pageSize}, search=${search})}" 
+                   th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''"
+                   class="page-link">마지막</a>
+            </div>
+            
+            <!-- 페이지 크기 선택 (항상 표시) -->
+            <div style="margin-top: 15px;">
+                <label style="margin-right: 10px; font-weight: 500;">페이지당 항목:</label>
+                <select onchange="changePageSize(this.value)" style="padding: 8px 15px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem; cursor: pointer;">
+                    <option value="5" th:selected="${pageSize == 5}">5개</option>
+                    <option value="10" th:selected="${pageSize == 10}">10개</option>
+                    <option value="20" th:selected="${pageSize == 20}">20개</option>
+                    <option value="50" th:selected="${pageSize == 50}">50개</option>
+                </select>
+            </div>
         </div>
     </div>
+    
+    <script>
+        let searchTimeout;
+        
+        // 자동 검색 (500ms 후 실행)
+        function autoSearch() {
+            clearTimeout(searchTimeout);
+            
+            searchTimeout = setTimeout(() => {
+                const form = document.getElementById('searchForm');
+                const searchInput = document.getElementById('searchInput');
+                
+                // 검색어가 비어있으면 전체 목록으로
+                if (searchInput.value.trim() === '') {
+                    window.location.href = '/admin/products';
+                } else {
+                    form.submit();
+                }
+            }, 500);
+        }
+        
+        function changePageSize(size) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('size', size);
+            urlParams.set('page', '0');
+            window.location.href = '/admin/products?' + urlParams.toString();
+        }
+    </script>
 </body>
 </html>
 

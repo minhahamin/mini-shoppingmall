@@ -28,6 +28,10 @@
         <form th:action="${isEdit ? '/admin/products/' + product.id : '/admin/products'}" 
               th:object="${product}" method="post">
             
+            <!-- 페이지 정보 유지 -->
+            <input type="hidden" name="page" th:value="${page != null ? page : 0}" />
+            <input type="hidden" name="size" th:value="${size != null ? size : 10}" />
+            
             <div class="form-group">
                 <label for="name">상품명 *</label>
                 <input type="text" id="name" th:field="*{name}" required>
@@ -83,7 +87,9 @@
         </form>
         
         <div class="form-footer">
-            <a href="/admin/products">목록으로 돌아가기</a>
+            <a th:href="@{/admin/products(page=${page != null ? page : 0}, size=${size != null ? size : 10})}">
+                목록으로 돌아가기
+            </a>
         </div>
     </div>
 </body>
