@@ -362,7 +362,7 @@ java -jar target/mini-shoppingmall-1.0.0.jar
 
 ### 관리자 계정
 - **아이디**: admin
-- **비밀번호**: 123456
+- **비밀번호**: 1234 (배포 시 반드시 변경 필요!)
 
 ### 일반 회원
 - 회원가입 필요 (http://localhost:8080/register)
@@ -520,6 +520,266 @@ chmod +x mvnw
 # 다른 포트로 실행
 .\mvnw.cmd spring-boot:run -Dserver.port=8081
 ```
+
+## 🚀 배포 방법
+
+### 옵션 1: JAR 파일로 배포 (가장 간단)
+
+**1. 프로젝트 빌드:**
+```bash
+.\mvnw.cmd clean package -DskipTests
+```
+
+**2. JAR 파일 생성 확인:**
+```
+target/mini-shoppingmall-1.0.0.jar
+```
+
+**3. 서버에서 실행:**
+```bash
+java -jar target/mini-shoppingmall-1.0.0.jar
+```
+
+**4. 백그라운드 실행 (Linux/Mac):**
+```bash
+nohup java -jar target/mini-shoppingmall-1.0.0.jar > app.log 2>&1 &
+```
+
+**5. 환경 변수 설정:**
+```bash
+# Windows
+set SPRING_DATASOURCE_URL=jdbc:postgresql://your-db-host:5432/shoppingmall
+set SPRING_DATASOURCE_USERNAME=postgres
+set SPRING_DATASOURCE_PASSWORD=your_password
+set STRIPE_API_KEY=sk_live_your_key
+
+java -jar target/mini-shoppingmall-1.0.0.jar
+
+# Linux/Mac
+export SPRING_DATASOURCE_URL=jdbc:postgresql://your-db-host:5432/shoppingmall
+export SPRING_DATASOURCE_USERNAME=postgres
+export SPRING_DATASOURCE_PASSWORD=your_password
+export STRIPE_API_KEY=sk_live_your_key
+
+java -jar target/mini-shoppingmall-1.0.0.jar
+```
+
+---
+
+### 옵션 2: Railway 배포 (무료, 추천)
+
+**1. Railway 계정 생성:**
+- https://railway.app 접속
+- GitHub 계정으로 로그인
+
+**2. 새 프로젝트 생성:**
+```
++ New Project → Deploy from GitHub repo → 저장소 선택
+```
+
+**3. PostgreSQL 추가:**
+```
++ New → Database → Add PostgreSQL
+```
+
+**4. 환경 변수 설정:**
+```
+Railway Dashboard → Variables → Add Variable
+
+SPRING_PROFILES_ACTIVE=prod
+SPRING_DATASOURCE_URL=${{Postgres.DATABASE_URL}}
+SPRING_DATASOURCE_USERNAME=${{Postgres.PGUSER}}
+SPRING_DATASOURCE_PASSWORD=${{Postgres.PGPASSWORD}}
+STRIPE_API_KEY=sk_live_your_key
+STRIPE_PUBLIC_KEY=pk_live_your_key
+STRIPE_WEBHOOK_SECRET=whsec_your_secret
+```
+
+**5. 자동 배포:**
+- GitHub에 푸시하면 자동으로 배포됨
+- Railway가 제공하는 URL로 접속 가능
+
+---
+
+### 옵션 3: Render 배포 (무료)
+
+**1. Render 계정 생성:**
+- https://render.com 접속
+- GitHub 계정으로 로그인
+
+**2. 새 Web Service 생성:**
+```
++ New → Web Service → GitHub 저장소 연결
+```
+
+**3. 설정:**
+```
+Name: mini-shoppingmall
+Environment: Java
+Build Command: ./mvnw clean package -DskipTests
+Start Command: java -jar target/mini-shoppingmall-1.0.0.jar
+```
+
+**4. PostgreSQL 추가:**
+```
++ New → PostgreSQL → 데이터베이스 생성
+```
+
+**5. 환경 변수 설정:**
+```
+Environment → Add Environment Variable
+
+SPRING_PROFILES_ACTIVE=prod
+SPRING_DATASOURCE_URL=[Render PostgreSQL URL]
+SPRING_DATASOURCE_USERNAME=[자동 생성됨]
+SPRING_DATASOURCE_PASSWORD=[자동 생성됨]
+STRIPE_API_KEY=sk_live_your_key
+STRIPE_PUBLIC_KEY=pk_live_your_key
+```
+
+---
+
+### 옵션 4: AWS EC2 배포 (프로덕션 추천)
+
+**1. EC2 인스턴스 생성:**
+```
+Amazon Linux 2 또는 Ubuntu 20.04 LTS
+t2.micro (프리티어 가능)
+```
+
+**2. 인스턴스 접속:**
+```bash
+ssh -i your-key.pem ec2-user@your-ec2-ip
+```
+
+**3. Java 17 설치:**
+```bash
+# Amazon Linux 2
+sudo amazon-linux-extras install java-openjdk17
+
+# Ubuntu
+sudo apt update
+sudo apt install openjdk-17-jdk
+```
+
+**4. PostgreSQL 설정:**
+```bash
+# RDS 사용 권장
+# 또는 같은 EC2에 설치
+sudo apt install postgresql postgresql-contrib
+```
+
+**5. JAR 파일 업로드:**
+```bash
+scp -i your-key.pem target/mini-shoppingmall-1.0.0.jar ec2-user@your-ec2-ip:~/
+```
+
+**6. 실행:**
+```bash
+export SPRING_DATASOURCE_URL=jdbc:postgresql://your-rds-endpoint:5432/shoppingmall
+export SPRING_DATASOURCE_USERNAME=postgres
+export SPRING_DATASOURCE_PASSWORD=your_password
+export STRIPE_API_KEY=sk_live_your_key
+
+nohup java -jar mini-shoppingmall-1.0.0.jar > app.log 2>&1 &
+```
+
+**7. Nginx 리버스 프록시 (선택):**
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+---
+
+### 옵션 5: Docker 배포
+
+**1. Dockerfile 생성:**
+```dockerfile
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+COPY target/mini-shoppingmall-1.0.0.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+**2. Docker 이미지 빌드:**
+```bash
+docker build -t mini-shoppingmall .
+```
+
+**3. Docker 실행:**
+```bash
+docker run -d -p 8080:8080 \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/shoppingmall \
+  -e SPRING_DATASOURCE_USERNAME=postgres \
+  -e SPRING_DATASOURCE_PASSWORD=your_password \
+  -e STRIPE_API_KEY=sk_live_your_key \
+  mini-shoppingmall
+```
+
+---
+
+## 📝 배포 체크리스트
+
+### 배포 전 확인사항:
+- [ ] `application-local.properties`가 `.gitignore`에 있는지 확인
+- [ ] 프로덕션 데이터베이스 생성
+- [ ] Stripe 실제(live) API 키 발급
+- [ ] 관리자 비밀번호 변경 (기본값 1234 → 강력한 비밀번호)
+- [ ] CSRF 설정 검토 (현재 비활성화)
+- [ ] 로그 레벨 설정 (`logging.level.root=INFO`)
+
+### 배포 후 확인사항:
+- [ ] 메인 페이지 접속 확인
+- [ ] 회원가입/로그인 테스트
+- [ ] 상품 주문 및 결제 테스트
+- [ ] Stripe Webhook 설정 (프로덕션)
+- [ ] 도메인 연결 (선택사항)
+- [ ] HTTPS 인증서 설정 (Let's Encrypt)
+
+---
+
+## 🔧 프로덕션 설정 (application-prod.properties)
+
+```properties
+# src/main/resources/application-prod.properties
+spring.profiles.active=prod
+
+# 데이터베이스
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+
+# JPA
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=false
+
+# Flyway
+spring.flyway.enabled=true
+
+# Stripe
+stripe.api.key=${STRIPE_API_KEY}
+stripe.public.key=${STRIPE_PUBLIC_KEY}
+stripe.webhook.secret=${STRIPE_WEBHOOK_SECRET}
+
+# 로그
+logging.level.root=INFO
+logging.level.com.shoppingmall=INFO
+
+# 서버
+server.port=${PORT:8080}
+```
+
+---
 
 ## 📝 향후 개발 계획
 
