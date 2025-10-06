@@ -28,8 +28,12 @@ buildNumber.properties
 *.log
 *.gz
 
-# H2 Database
+# Database
 *.db
+
+# Local Environment Configuration (민감한 정보 보호)
+application-local.properties
+.env
 
 # OS
 .DS_Store

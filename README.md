@@ -6,7 +6,8 @@ Spring Boot로 구현한 미니 쇼핑몰 프로젝트입니다.
 
 - **Backend**: Spring Boot 3.1.5
 - **Security**: Spring Security
-- **Database**: H2 (In-Memory)
+- **Database**: PostgreSQL
+- **Migration**: Flyway
 - **Template Engine**: Thymeleaf
 - **Build Tool**: Maven
 - **Java Version**: 17
@@ -22,7 +23,8 @@ Spring Boot로 구현한 미니 쇼핑몰 프로젝트입니다.
 
 ### 사전 요구사항
 - Java 17 이상
-- Maven
+- Maven (또는 Maven Wrapper 사용)
+- PostgreSQL 데이터베이스
 
 ### 실행 명령어
 
@@ -51,13 +53,61 @@ java -jar target/mini-shoppingmall-1.0.0.jar
 mvn spring-boot:run
 ```
 
+### 데이터베이스 설정
+
+**1. PostgreSQL 데이터베이스 생성:**
+```sql
+CREATE DATABASE shoppingmall;
+```
+
+**2. 환경변수 설정 (두 가지 방법):**
+
+**방법 1: application-local.properties 사용 (권장)**
+```bash
+# src/main/resources/application-local.properties 파일 생성
+spring.datasource.url=jdbc:postgresql://localhost:5432/shoppingmall
+spring.datasource.username=postgres
+spring.datasource.password=your_password
+```
+
+**방법 2: 환경변수 사용**
+```bash
+# Windows PowerShell
+$env:DB_URL="jdbc:postgresql://localhost:5432/shoppingmall"
+$env:DB_USERNAME="postgres"
+$env:DB_PASSWORD="your_password"
+
+# Windows CMD
+set DB_URL=jdbc:postgresql://localhost:5432/shoppingmall
+set DB_USERNAME=postgres
+set DB_PASSWORD=your_password
+```
+
 ### 접속 정보
 
 - **애플리케이션**: http://localhost:8080
-- **H2 콘솔**: http://localhost:8080/h2-console
-  - JDBC URL: `jdbc:h2:mem:shoppingmall`
-  - Username: `sa`
-  - Password: (비어있음)
+
+### 데이터베이스 마이그레이션
+
+이 프로젝트는 **Flyway**를 사용하여 데이터베이스 스키마를 자동으로 관리합니다.
+
+**마이그레이션 파일 위치:**
+```
+src/main/resources/db/migration/
+├── V1__init_database.sql          # 초기 스키마
+├── V2__add_sample_data.sql        # 샘플 데이터
+└── README.md                       # 마이그레이션 가이드
+```
+
+**자동 실행:**
+- 애플리케이션 시작 시 자동으로 마이그레이션 실행
+- 새로운 마이그레이션 파일만 실행됨
+- 마이그레이션 이력은 `flyway_schema_history` 테이블에 저장
+
+**새로운 마이그레이션 추가:**
+1. `src/main/resources/db/migration/` 폴더에 파일 생성
+2. 파일명 형식: `V{버전}__(설명).sql` (예: `V3__add_products_table.sql`)
+3. 애플리케이션 재시작 시 자동 적용
 
 ## 프로젝트 구조
 
@@ -83,6 +133,12 @@ mini-shoppingmall/
 │       │       └── UserRegistrationDto.java
 │       └── resources/
 │           ├── application.properties
+│           ├── application-local.properties (Git 제외)
+│           ├── db/
+│           │   └── migration/
+│           │       ├── V1__init_database.sql
+│           │       ├── V2__add_sample_data.sql
+│           │       └── README.md
 │           ├── static/
 │           │   └── css/
 │           │       └── style.css
@@ -90,7 +146,10 @@ mini-shoppingmall/
 │               ├── index.html
 │               ├── login.html
 │               └── register.html
-└── pom.xml
+├── pom.xml
+├── mvnw.cmd (Windows용)
+├── mvnw (Mac/Linux용)
+└── env.example
 ```
 
 ## 페이지 구성

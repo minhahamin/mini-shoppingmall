@@ -30,8 +30,7 @@ public class SecurityConfig {
                     new AntPathRequestMatcher("/login"),
                     new AntPathRequestMatcher("/css/**"),
                     new AntPathRequestMatcher("/js/**"),
-                    new AntPathRequestMatcher("/images/**"),
-                    new AntPathRequestMatcher("/h2-console/**")
+                    new AntPathRequestMatcher("/images/**")
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -47,12 +46,7 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
                 .permitAll()
             )
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers(new AntPathRequestMatcher("/h2-console/**"))
-            )
-            .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin())
-            );
+            .csrf(csrf -> csrf.disable());
         
         return http.build();
     }
