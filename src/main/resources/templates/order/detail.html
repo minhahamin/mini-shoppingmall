@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 상세 - 미니 쇼핑몰</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="/products">상품</a>
+                <a href="/cart">🛒 장바구니</a>
+                <a href="/order/history">주문내역</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Order Detail -->
+    <div class="container" style="margin-top: 40px; max-width: 900px;">
+        <h2 style="margin-bottom: 30px;">주문 상세</h2>
+        
+        <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #f0f0f0;">
+                <div>
+                    <h3>주문번호: <span th:text="${order.orderNumber}"></span></h3>
+                    <p style="color: #888; margin-top: 5px;" th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm:ss')}"></p>
+                </div>
+                <div>
+                    <span th:text="${order.status}" 
+                          th:classappend="${order.status.name() == 'PAID'} ? 'status-paid' : 
+                                         (${order.status.name() == 'CANCELLED'} ? 'status-cancelled' : 'status-pending')"
+                          style="padding: 8px 20px; border-radius: 20px; font-weight: 600; font-size: 1rem;"></span>
+                </div>
+            </div>
+            
+            <h4 style="margin: 20px 0 15px 0;">주문 상품</h4>
+            <div th:each="item : ${order.items}" style="display: flex; gap: 20px; padding: 15px 0; border-bottom: 1px solid #eee;">
+                <div style="flex: 1;">
+                    <p style="font-weight: 500; font-size: 1.1rem;" th:text="${item.productName}"></p>
+                    <p style="color: #888; margin-top: 5px;">
+                        <span th:text="|${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                        × <span th:text="${item.quantity}"></span>개
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="font-size: 1.2rem; font-weight: bold; color: #667eea;">
+                        <span th:text="|${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                    </p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 20px; background: #f8f8f8; border-radius: 8px;">
+                <h4 style="margin-bottom: 10px;">배송 정보</h4>
+                <p style="margin: 5px 0;"><strong>주소:</strong> <span th:text="${order.shippingAddress}"></span></p>
+                <p style="margin: 5px 0;"><strong>연락처:</strong> <span th:text="${order.phoneNumber}"></span></p>
+            </div>
+            
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #667eea; text-align: right;">
+                <h3 style="color: #667eea; font-size: 1.5rem;">
+                    총 결제 금액: <span th:text="|${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                </h3>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/order/history" class="btn-primary">주문 내역으로 돌아가기</a>
+        </div>
+    </div>
+    
+    <style>
+        .status-paid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</body>
+</html>
+

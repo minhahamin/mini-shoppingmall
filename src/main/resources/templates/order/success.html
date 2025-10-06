@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 완료 - 미니 쇼핑몰</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="/products">상품</a>
+                <a href="/order/history">주문내역</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Success Content -->
+    <div class="container" style="margin-top: 60px; max-width: 600px; text-align: center;">
+        <div style="background: white; padding: 60px 40px; border-radius: 10px; box-shadow: 0 2px 20px rgba(0,0,0,0.1);">
+            <div style="font-size: 4rem; color: #4CAF50; margin-bottom: 20px;">✓</div>
+            <h1 style="color: #4CAF50; margin-bottom: 20px;">주문이 완료되었습니다!</h1>
+            <p style="font-size: 1.1rem; color: #666; margin-bottom: 30px;">
+                고객님의 주문이 성공적으로 처리되었습니다.
+            </p>
+            
+            <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <p style="margin: 10px 0;"><strong>주문번호:</strong> <span th:text="${order.orderNumber}"></span></p>
+                <p style="margin: 10px 0;"><strong>주문일시:</strong> <span th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}"></span></p>
+                <p style="margin: 10px 0; font-size: 1.3rem; color: #667eea;">
+                    <strong>결제금액:</strong> <span th:text="|${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <a href="/order/history" class="btn-primary">주문 내역 보기</a>
+                <a href="/products" class="btn-primary" style="background: #888;">쇼핑 계속하기</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

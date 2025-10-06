@@ -8,6 +8,7 @@ Spring Boot로 구현한 미니 쇼핑몰 프로젝트입니다.
 - **Security**: Spring Security
 - **Database**: PostgreSQL
 - **Migration**: Flyway
+- **Payment**: Stripe
 - **Template Engine**: Thymeleaf
 - **Build Tool**: Maven
 - **Java Version**: 17
@@ -16,6 +17,13 @@ Spring Boot로 구현한 미니 쇼핑몰 프로젝트입니다.
 
 - ✅ 회원가입 및 로그인
 - ✅ Spring Security를 통한 인증/인가
+- ✅ 관리자/일반회원 권한 구분
+- ✅ 상품 관리 (등록/수정/삭제) - 관리자 전용
+- ✅ 상품 목록 및 검색 (자동 검색)
+- ✅ 장바구니 기능 (체크박스 선택, 실시간 금액 계산)
+- ✅ 주문 및 Stripe 결제 시스템
+- ✅ 주문 내역 조회
+- ✅ Flyway 데이터베이스 마이그레이션
 - ✅ 반응형 UI 디자인
 - ✅ 메인 배너 페이지
 
@@ -52,6 +60,22 @@ java -jar target/mini-shoppingmall-1.0.0.jar
 ```bash
 mvn spring-boot:run
 ```
+
+### Stripe 결제 설정
+
+**Stripe API 키 발급 및 설정:**
+
+자세한 가이드는 [STRIPE_SETUP.md](STRIPE_SETUP.md) 파일을 참고하세요.
+
+**빠른 설정:**
+1. https://stripe.com 에서 계정 생성
+2. https://dashboard.stripe.com/test/apikeys 에서 테스트 API 키 복사
+3. `application-local.properties`에 키 설정
+
+**테스트 카드:**
+- 카드번호: `4242 4242 4242 4242`
+- 만료일: 미래 날짜 (예: 12/25)
+- CVC: 123
 
 ### 데이터베이스 설정
 

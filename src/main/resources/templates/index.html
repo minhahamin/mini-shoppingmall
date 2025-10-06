@@ -17,6 +17,7 @@
                 <a href="/products">상품</a>
                 <th:block sec:authorize="isAuthenticated()">
                     <a href="/cart">🛒 장바구니</a>
+                    <a href="/order/history">주문내역</a>
                     <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
                     <span style="color: white;">환영합니다, <strong sec:authentication="name"></strong>님!</span>
                     <form th:action="@{/logout}" method="post" style="display: inline;">

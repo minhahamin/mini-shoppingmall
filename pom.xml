@@ -72,6 +72,13 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
         
+        <!-- Stripe Payment -->
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>22.30.0</version>
+        </dependency>
+        
         <!-- H2 Database (개발용 - 필요시 활성화) -->
         <!--
         <dependency>

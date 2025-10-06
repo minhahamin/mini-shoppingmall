@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 오류 - 미니 쇼핑몰</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="/products">상품</a>
+                <a href="/cart">🛒 장바구니</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Error Content -->
+    <div class="container" style="margin-top: 60px; max-width: 600px; text-align: center;">
+        <div style="background: white; padding: 60px 40px; border-radius: 10px; box-shadow: 0 2px 20px rgba(0,0,0,0.1);">
+            <div style="font-size: 4rem; color: #f44336; margin-bottom: 20px;">✗</div>
+            <h1 style="color: #f44336; margin-bottom: 20px;">주문 처리 중 오류가 발생했습니다</h1>
+            <p style="font-size: 1.1rem; color: #666; margin-bottom: 30px;" th:text="${error != null ? error : '알 수 없는 오류가 발생했습니다.'}">
+            </p>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <a href="/cart" class="btn-primary">장바구니로 돌아가기</a>
+                <a href="/products" class="btn-primary" style="background: #888;">쇼핑 계속하기</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

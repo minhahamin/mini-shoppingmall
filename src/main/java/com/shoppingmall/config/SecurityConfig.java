@@ -38,6 +38,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/admin/**")).hasRole("ADMIN")
                 .requestMatchers(new AntPathRequestMatcher("/cart/**")).authenticated()
+                .requestMatchers(new AntPathRequestMatcher("/order/**")).authenticated()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

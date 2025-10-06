@@ -16,6 +16,7 @@
                 <a href="/">홈</a>
                 <a href="/products">상품</a>
                 <a href="/cart">장바구니</a>
+                <a href="/order/history">주문내역</a>
                 <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
                 <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
                     <button type="submit" class="btn-logout" style="cursor: pointer;">로그아웃</button>
@@ -213,9 +214,10 @@
             
             const itemIds = Array.from(checkboxes).map(cb => cb.value);
             
-            // 주문 기능은 아직 미구현
-            alert(`${checkboxes.length}개 상품 주문 기능은 준비 중입니다`);
-            // TODO: 주문 기능 구현 시 여기에 코드 추가
+            // 주문 페이지로 이동
+            const params = new URLSearchParams();
+            itemIds.forEach(id => params.append('itemIds', id));
+            window.location.href = '/order/checkout?' + params.toString();
         }
         
         // 페이지 로드 시 초기화
