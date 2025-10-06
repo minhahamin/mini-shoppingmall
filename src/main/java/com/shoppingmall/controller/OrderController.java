@@ -3,6 +3,7 @@ package com.shoppingmall.controller;
 import com.shoppingmall.entity.Cart;
 import com.shoppingmall.entity.CartItem;
 import com.shoppingmall.entity.Order;
+import com.shoppingmall.entity.OrderItem;
 import com.shoppingmall.service.CartService;
 import com.shoppingmall.service.OrderService;
 import com.shoppingmall.service.PaymentService;
@@ -124,13 +125,19 @@ public class OrderController {
             Order order = orderService.findByStripeSessionId(sessionId);
             orderService.markAsPaid(order.getId(), sessionId);
             
-            // 결제 완료 후 장바구니에서 해당 상품 제거
-            cartService.clearCart(authentication.getName());
+            // 결제 완료 후 장바구니에서 주문한 항목만 제거
+            if (order.getCartItemIds() != null && !order.getCartItemIds().isEmpty()) {
+                List<Long> cartItemIds = java.util.Arrays.stream(order.getCartItemIds().split(","))
+                        .map(Long::parseLong)
+                        .collect(Collectors.toList());
+                
+                cartService.removeCartItems(cartItemIds);
+            }
             
             model.addAttribute("order", order);
             return "order/success";
         } catch (Exception e) {
-            model.addAttribute("error", "주문 정보를 불러오는데 실패했습니다");
+            model.addAttribute("error", "주문 정보를 불러오는데 실패했습니다: " + e.getMessage());
             return "order/error";
         }
     }

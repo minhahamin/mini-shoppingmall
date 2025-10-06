@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -106,6 +107,26 @@ public class CartService {
         Cart cart = getOrCreateCart(username);
         cart.getItems().clear();
         cartRepository.save(cart);
+    }
+    
+    // CartItem ID들로 장바구니에서 제거
+    public void removeCartItems(List<Long> cartItemIds) {
+        System.out.println("===== 장바구니 항목 삭제 =====");
+        System.out.println("삭제할 CartItem ID들: " + cartItemIds);
+        
+        for (Long cartItemId : cartItemIds) {
+            try {
+                CartItem item = cartItemRepository.findById(cartItemId).orElse(null);
+                if (item != null) {
+                    System.out.println("삭제: " + item.getProduct().getName() + " (CartItem ID: " + cartItemId + ")");
+                    cartItemRepository.deleteById(cartItemId);
+                }
+            } catch (Exception e) {
+                System.out.println("삭제 실패 (CartItem ID: " + cartItemId + "): " + e.getMessage());
+            }
+        }
+        
+        System.out.println("===== 삭제 완료 =====");
     }
     
     // 장바구니 총액 계산

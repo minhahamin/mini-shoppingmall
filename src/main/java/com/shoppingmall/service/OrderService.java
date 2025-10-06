@@ -23,7 +23,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     
-    // 주문 생성 (재고 확인만)
+    // 주문 생성 (재고 확인만, CartItem ID들 저장)
     public Order createOrder(String username, List<CartItem> cartItems, String address, String phone) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
@@ -51,6 +51,12 @@ public class OrderService {
                 .map(CartItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
+        // CartItem ID들을 문자열로 저장
+        String cartItemIds = cartItems.stream()
+                .map(item -> String.valueOf(item.getId()))
+                .reduce((a, b) -> a + "," + b)
+                .orElse("");
+        
         // 주문 생성
         Order order = Order.builder()
                 .user(user)
@@ -59,6 +65,7 @@ public class OrderService {
                 .status(Order.OrderStatus.PENDING)
                 .shippingAddress(address)
                 .phoneNumber(phone)
+                .cartItemIds(cartItemIds)  // CartItem ID들 저장
                 .build();
         
         // 주문 항목 추가

@@ -54,6 +54,9 @@ public class Order {
     
     private String phoneNumber;
     
+    @Column(name = "cart_item_ids", columnDefinition = "TEXT")
+    private String cartItemIds;  // 주문한 장바구니 항목 ID들 (쉼표로 구분)
+    
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
