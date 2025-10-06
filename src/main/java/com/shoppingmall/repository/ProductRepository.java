@@ -4,6 +4,7 @@ import com.shoppingmall.entity.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,5 +20,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // 판매량 순으로 조회
     List<Product> findTop3ByAvailableTrueOrderBySalesCountDesc();
     List<Product> findByAvailableTrueOrderByCreatedAtDesc();
+    
+    // 중복 제거된 카테고리 목록 조회
+    @Query("SELECT DISTINCT p.category FROM Product p ORDER BY p.category")
+    List<String> findDistinctCategories();
 }
 

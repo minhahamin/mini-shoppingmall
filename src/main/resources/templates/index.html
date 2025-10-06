@@ -13,8 +13,15 @@
         <div class="header-container">
             <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
             <nav class="nav-links">
-                <a href="/">홈</a>
-                <a href="/products">상품</a>
+                <div class="dropdown" id="categoryDropdown">
+                    <a href="#" class="dropdown-toggle" onclick="toggleDropdown(event)">상품 ▼</a>
+                    <div class="dropdown-menu">
+                        <a href="/products">전체 상품</a>
+                        <a th:each="category : ${categories}" 
+                           th:href="@{/products(category=${category})}" 
+                           th:text="${category}"></a>
+                    </div>
+                </div>
                 <a href="/mypage" sec:authorize="isAuthenticated()">👤 마이페이지</a>
                 <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
                 <a href="/login" sec:authorize="!isAuthenticated()" class="btn-login">로그인</a>
@@ -87,6 +94,23 @@
             <a href="/products" class="btn-explore">모든 상품 보기</a>
         </div>
     </div>
+    
+    <script>
+        function toggleDropdown(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const dropdown = document.getElementById('categoryDropdown');
+            dropdown.classList.toggle('active');
+        }
+        
+        // 다른 곳 클릭 시 드롭다운 닫기
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('categoryDropdown');
+            if (dropdown && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
 

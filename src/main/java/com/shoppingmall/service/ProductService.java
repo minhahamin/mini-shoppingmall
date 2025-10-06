@@ -92,5 +92,15 @@ public class ProductService {
         List<Product> products = productRepository.findByAvailableTrueOrderByCreatedAtDesc();
         return products.size() > limit ? products.subList(0, limit) : products;
     }
+    
+    @Transactional(readOnly = true)
+    public List<Product> getProductsByCategory(String category) {
+        return productRepository.findByCategory(category);
+    }
+    
+    @Transactional(readOnly = true)
+    public List<String> getAllCategories() {
+        return productRepository.findDistinctCategories();
+    }
 }
 

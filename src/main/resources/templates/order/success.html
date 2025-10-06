@@ -13,9 +13,20 @@
         <div class="header-container">
             <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
             <nav class="nav-links">
-                <a href="/">홈</a>
-                <a href="/products">상품</a>
-                <a href="/order/history">주문내역</a>
+                <div class="dropdown" id="categoryDropdown">
+                    <a href="#" class="dropdown-toggle" onclick="toggleDropdown(event)">상품 ▼</a>
+                    <div class="dropdown-menu">
+                        <a href="/products">전체 상품</a>
+                        <a th:each="category : ${categories}" 
+                           th:href="@{/products(category=${category})}" 
+                           th:text="${category}"></a>
+                    </div>
+                </div>
+                <a href="/mypage">👤 마이페이지</a>
+                <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
             </nav>
         </div>
     </header>
@@ -43,6 +54,7 @@
             </div>
         </div>
     </div>
+    <script src="/js/dropdown.js"></script>
 </body>
 </html>
 

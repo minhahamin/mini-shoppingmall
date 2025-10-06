@@ -12,9 +12,15 @@
         <div class="header-container">
             <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
             <nav class="nav-links">
-                <a href="/">홈</a>
-                <a href="#">상품</a>
-                <a href="#">카테고리</a>
+                <div class="dropdown" id="categoryDropdown">
+                    <a href="#" class="dropdown-toggle" onclick="toggleDropdown(event)">상품 ▼</a>
+                    <div class="dropdown-menu">
+                        <a href="/products">전체 상품</a>
+                        <a th:each="category : ${categories}" 
+                           th:href="@{/products(category=${category})}" 
+                           th:text="${category}"></a>
+                    </div>
+                </div>
                 <a href="/register">회원가입</a>
             </nav>
         </div>
@@ -52,6 +58,7 @@
             <p>계정이 없으신가요? <a href="/register">회원가입</a></p>
         </div>
     </div>
+    <script src="/js/dropdown.js"></script>
 </body>
 </html>
 

@@ -13,8 +13,19 @@
         <div class="header-container">
             <a href="/" class="logo">🛍️ Mini Shopping Mall - 관리자</a>
             <nav class="nav-links">
-                <a href="/">홈</a>
+                <div class="dropdown" id="categoryDropdown">
+                    <a href="#" class="dropdown-toggle" onclick="toggleDropdown(event)">상품 ▼</a>
+                    <div class="dropdown-menu">
+                        <a href="/products">전체 상품</a>
+                        <a th:each="category : ${categories}" 
+                           th:href="@{/products(category=${category})}" 
+                           th:text="${category}"></a>
+                    </div>
+                </div>
                 <a href="/admin/products">상품 관리</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
             </nav>
         </div>
     </header>
@@ -78,9 +89,12 @@
             </div>
             
             <div class="form-group">
-                <label>
-                    <input type="checkbox" th:field="*{available}"> 판매 가능
-                </label>
+                <label for="available">판매 상태</label>
+                <div style="display: flex; align-items: center; padding: 12px 0;">
+                    <input type="checkbox" id="available" th:field="*{available}" 
+                           style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;">
+                    <label for="available" style="margin: 0; cursor: pointer; font-weight: normal;">판매 가능</label>
+                </div>
             </div>
             
             <button type="submit" class="btn-submit" th:text="${isEdit ? '수정하기' : '등록하기'}"></button>
@@ -92,6 +106,7 @@
             </a>
         </div>
     </div>
+    <script src="/js/dropdown.js"></script>
 </body>
 </html>
 

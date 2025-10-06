@@ -23,12 +23,17 @@ public class ProductController {
     private final WishlistService wishlistService;
     
     @GetMapping
-    public String productList(@RequestParam(required = false) String search, Model model) {
+    public String productList(@RequestParam(required = false) String search,
+                             @RequestParam(required = false) String category,
+                             Model model) {
         List<Product> products;
         
         if (search != null && !search.isEmpty()) {
             products = productService.searchProducts(search);
             model.addAttribute("search", search);
+        } else if (category != null && !category.isEmpty()) {
+            products = productService.getProductsByCategory(category);
+            model.addAttribute("selectedCategory", category);
         } else {
             products = productService.getAvailableProducts();
         }
