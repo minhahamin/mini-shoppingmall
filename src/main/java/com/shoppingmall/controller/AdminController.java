@@ -6,6 +6,7 @@ import com.shoppingmall.entity.Coupon;
 import com.shoppingmall.entity.Product;
 import com.shoppingmall.entity.User;
 import com.shoppingmall.service.CouponService;
+import com.shoppingmall.service.FileStorageService;
 import com.shoppingmall.service.ProductService;
 import com.shoppingmall.service.UserService;
 import jakarta.validation.Valid;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
@@ -32,6 +34,7 @@ public class AdminController {
     private final ProductService productService;
     private final CouponService couponService;
     private final UserService userService;
+    private final FileStorageService fileStorageService;
     
     @GetMapping("/products")
     public String productList(@RequestParam(defaultValue = "0") int page,
@@ -67,6 +70,7 @@ public class AdminController {
     @PostMapping("/products")
     public String createProduct(@Valid @ModelAttribute("product") ProductDto productDto,
                                BindingResult result,
+                               @RequestParam(required = false) MultipartFile imageFile,
                                @RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "10") int size,
                                RedirectAttributes redirectAttributes,
@@ -77,6 +81,13 @@ public class AdminController {
         }
         
         try {
+            // 이미지 파일이 업로드된 경우 우선적으로 처리
+            if (imageFile != null && !imageFile.isEmpty()) {
+                String imageUrl = fileStorageService.storeFile(imageFile);
+                productDto.setImageUrl(imageUrl);
+            }
+            // 이미지 파일이 없으면 productDto의 imageUrl을 그대로 사용 (URL 직접 입력 지원)
+            
             productService.createProduct(productDto);
             redirectAttributes.addFlashAttribute("success", "상품이 등록되었습니다");
             return "redirect:/admin/products?page=" + page + "&size=" + size;
@@ -113,6 +124,7 @@ public class AdminController {
     public String updateProduct(@PathVariable Long id,
                                @Valid @ModelAttribute("product") ProductDto productDto,
                                BindingResult result,
+                               @RequestParam(required = false) MultipartFile imageFile,
                                @RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "10") int size,
                                RedirectAttributes redirectAttributes,
@@ -123,6 +135,25 @@ public class AdminController {
         }
         
         try {
+            // 기존 상품 정보 가져오기
+            Product existingProduct = productService.getProduct(id);
+            String existingImageUrl = existingProduct.getImageUrl();
+            
+            // 새로운 이미지 파일이 업로드된 경우 처리
+            if (imageFile != null && !imageFile.isEmpty()) {
+                // 새 이미지 저장
+                String newImageUrl = fileStorageService.storeFile(imageFile);
+                productDto.setImageUrl(newImageUrl);
+                
+                // 기존 이미지가 서버에 저장된 파일인 경우 삭제
+                if (existingImageUrl != null && existingImageUrl.startsWith("/uploads/")) {
+                    fileStorageService.deleteFile(existingImageUrl);
+                }
+            } else {
+                // 이미지 파일이 업로드되지 않은 경우 기존 imageUrl 유지
+                productDto.setImageUrl(existingImageUrl);
+            }
+            
             productService.updateProduct(id, productDto);
             redirectAttributes.addFlashAttribute("success", "상품이 수정되었습니다");
             return "redirect:/admin/products?page=" + page + "&size=" + size;
@@ -138,7 +169,18 @@ public class AdminController {
                                @RequestParam(defaultValue = "10") int size,
                                RedirectAttributes redirectAttributes) {
         try {
+            // 삭제 전에 이미지 URL 가져오기
+            Product product = productService.getProduct(id);
+            String imageUrl = product.getImageUrl();
+            
+            // 상품 삭제
             productService.deleteProduct(id);
+            
+            // 서버에 저장된 이미지 파일이면 삭제
+            if (imageUrl != null && imageUrl.startsWith("/uploads/")) {
+                fileStorageService.deleteFile(imageUrl);
+            }
+            
             redirectAttributes.addFlashAttribute("success", "상품이 삭제되었습니다");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "상품 삭제에 실패했습니다: " + e.getMessage());
