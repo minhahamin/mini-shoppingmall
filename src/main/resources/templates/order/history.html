@@ -57,7 +57,7 @@
                     </div>
                 </div>
                 
-                <div th:each="item : ${order.items}" style="display: flex; gap: 15px; padding: 10px 0;">
+                <div th:each="item : ${order.items}" style="display: flex; gap: 15px; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
                     <div style="flex: 1;">
                         <p style="font-weight: 500;" th:text="${item.productName}"></p>
                         <p style="color: #888; font-size: 0.9rem;">
@@ -65,8 +65,15 @@
                             × <span th:text="${item.quantity}"></span>개
                         </p>
                     </div>
-                    <div style="text-align: right;">
+                    <div style="text-align: right; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
                         <p style="font-weight: bold; color: #667eea;" th:text="|${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')}원|"></p>
+                        <div th:if="${order.status.name() == 'PAID'}">
+                            <a th:href="@{/reviews/new(productId=${item.product.id}, orderItemId=${item.id})}" 
+                               class="btn-small btn-edit" 
+                               style="padding: 5px 15px; font-size: 0.85rem; text-decoration: none;">
+                                리뷰 작성
+                            </a>
+                        </div>
                     </div>
                 </div>
                 

@@ -57,11 +57,22 @@
                         <span th:text="|${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}원|"></span>
                         × <span th:text="${item.quantity}"></span>개
                     </p>
+                    <div style="margin-top: 10px;">
+                        <a th:href="@{/products/{id}(id=${item.product.id})}" 
+                           style="color: #667eea; text-decoration: none; font-size: 0.9rem;">상품 상세보기</a>
+                    </div>
                 </div>
-                <div style="text-align: right;">
+                <div style="text-align: right; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
                     <p style="font-size: 1.2rem; font-weight: bold; color: #667eea;">
                         <span th:text="|${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')}원|"></span>
                     </p>
+                    <div th:if="${order.status.name() == 'PAID'}">
+                        <a th:href="@{/reviews/new(productId=${item.product.id}, orderItemId=${item.id})}" 
+                           class="btn-small btn-edit" 
+                           style="padding: 5px 15px; font-size: 0.85rem; text-decoration: none;">
+                            리뷰 작성
+                        </a>
+                    </div>
                 </div>
             </div>
             

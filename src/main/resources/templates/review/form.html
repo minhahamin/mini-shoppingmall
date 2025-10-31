@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${review != null ? '리뷰 수정' : '리뷰 작성'} + ' - 미니 쇼핑몰'"></title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
+            <nav class="nav-links">
+                <div class="dropdown" id="categoryDropdown">
+                    <a href="#" class="dropdown-toggle" onclick="toggleDropdown(event)">상품 ▼</a>
+                    <div class="dropdown-menu">
+                        <a href="/products">전체 상품</a>
+                        <a th:each="category : ${categories}" 
+                           th:href="@{/products(category=${category})}" 
+                           th:text="${category}"></a>
+                    </div>
+                </div>
+                <a href="/mypage" sec:authorize="isAuthenticated()">👤 마이페이지</a>
+                <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
+                <a href="/login" sec:authorize="!isAuthenticated()" class="btn-login">로그인</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Review Form -->
+    <div class="container" style="margin-top: 40px; max-width: 700px;">
+        <h2 style="margin-bottom: 30px;" th:text="${review != null ? '리뷰 수정' : '리뷰 작성'}"></h2>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <form th:action="${review != null ? '/reviews/' + review.id : '/reviews'}" method="post">
+                <input type="hidden" name="productId" th:value="${review != null ? review.product.id : productId}">
+                <input th:if="${orderItemId != null}" type="hidden" name="orderItemId" th:value="${orderItemId}">
+                
+                <div class="form-group">
+                    <label for="rating">평점 *</label>
+                    <div style="margin-top: 10px;">
+                        <input type="radio" id="rating5" name="rating" value="5" 
+                               th:checked="${review != null && review.rating == 5}">
+                        <label for="rating5" style="margin-left: 5px; margin-right: 15px; cursor: pointer;">
+                            <span style="color: #FFD700; font-size: 1.5rem;">★★★★★</span> (5점)
+                        </label>
+                        
+                        <input type="radio" id="rating4" name="rating" value="4"
+                               th:checked="${review != null && review.rating == 4}">
+                        <label for="rating4" style="margin-left: 5px; margin-right: 15px; cursor: pointer;">
+                            <span style="color: #FFD700; font-size: 1.5rem;">★★★★☆</span> (4점)
+                        </label>
+                        
+                        <input type="radio" id="rating3" name="rating" value="3"
+                               th:checked="${review != null && review.rating == 3}">
+                        <label for="rating3" style="margin-left: 5px; margin-right: 15px; cursor: pointer;">
+                            <span style="color: #FFD700; font-size: 1.5rem;">★★★☆☆</span> (3점)
+                        </label>
+                        
+                        <input type="radio" id="rating2" name="rating" value="2"
+                               th:checked="${review != null && review.rating == 2}">
+                        <label for="rating2" style="margin-left: 5px; margin-right: 15px; cursor: pointer;">
+                            <span style="color: #FFD700; font-size: 1.5rem;">★★☆☆☆</span> (2점)
+                        </label>
+                        
+                        <input type="radio" id="rating1" name="rating" value="1"
+                               th:checked="${review != null && review.rating == 1}">
+                        <label for="rating1" style="margin-left: 5px; margin-right: 15px; cursor: pointer;">
+                            <span style="color: #FFD700; font-size: 1.5rem;">★☆☆☆☆</span> (1점)
+                        </label>
+                    </div>
+                    <small style="display: block; margin-top: 5px; color: #666;">
+                        상품에 대한 전반적인 만족도를 평점으로 평가해주세요.
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="content">리뷰 내용 *</label>
+                    <textarea id="content" name="content" rows="8" required
+                              style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-family: inherit; resize: vertical;"
+                              placeholder="상품에 대한 솔직한 리뷰를 작성해주세요. 구매 경험, 상품 품질, 배송 등에 대한 의견을 자유롭게 남겨주세요."
+                              th:text="${review != null ? review.content : ''}"></textarea>
+                    <small style="display: block; margin-top: 5px; color: #666;">
+                        최소 10자 이상 작성해주세요.
+                    </small>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 30px;">
+                    <button type="submit" class="btn-submit" style="flex: 1;" 
+                            th:text="${review != null ? '수정하기' : '작성하기'}"></button>
+                    <a th:href="@{/products/{id}(id=${review != null ? review.product.id : productId})}" 
+                       class="btn-primary" 
+                       style="padding: 12px 30px; text-decoration: none; background: #888;">
+                        취소
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // 리뷰 내용 최소 길이 검증
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const content = document.getElementById('content').value.trim();
+            if (content.length < 10) {
+                e.preventDefault();
+                alert('리뷰 내용은 최소 10자 이상 작성해주세요.');
+                return false;
+            }
+            
+            const rating = document.querySelector('input[name="rating"]:checked');
+            if (!rating) {
+                e.preventDefault();
+                alert('평점을 선택해주세요.');
+                return false;
+            }
+        });
+    </script>
+    <script src="/js/dropdown.js"></script>
+</body>
+</html>
+

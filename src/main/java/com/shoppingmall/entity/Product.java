@@ -58,6 +58,14 @@ public class Product {
     @Builder.Default
     private Integer salesCount = 0;
     
+    @Column(name = "average_rating", precision = 3, scale = 2)
+    @Builder.Default
+    private BigDecimal averageRating = BigDecimal.ZERO;
+    
+    @Column(name = "review_count")
+    @Builder.Default
+    private Integer reviewCount = 0;
+    
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

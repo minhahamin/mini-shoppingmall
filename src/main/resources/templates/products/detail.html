@@ -65,7 +65,23 @@
                 <h1 th:text="${product.name}" style="margin-bottom: 20px;"></h1>
                 <p class="product-category" th:text="${product.category}" style="display: inline-block; margin-bottom: 20px;"></p>
                 
-                <p class="product-price" style="font-size: 2rem; margin: 20px 0;" th:text="|${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}원|"></p>
+                <div style="margin: 20px 0;">
+                    <p class="product-price" style="font-size: 2rem; margin-bottom: 10px;" th:text="|${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}원|"></p>
+                    <div th:if="${product.reviewCount > 0}" style="display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; gap: 3px;">
+                            <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                  style="color: #FFD700; font-size: 1.1rem;"
+                                  th:text="${i <= (product.averageRating != null ? product.averageRating.intValue() : 0)} ? '★' : '☆'"></span>
+                        </div>
+                        <span style="color: #666; font-weight: 500;">
+                            <span th:text="${product.averageRating != null ? #numbers.formatDecimal(product.averageRating, 1, 'POINT', 1, 'POINT') : '0.0'}"></span>
+                            <span style="margin-left: 3px;">(<span th:text="${product.reviewCount}"></span>)</span>
+                        </span>
+                    </div>
+                    <div th:if="${product.reviewCount == 0}" style="color: #888; font-size: 0.9rem;">
+                        아직 리뷰가 없습니다
+                    </div>
+                </div>
                 
                 <div style="margin: 20px 0; padding: 20px; background-color: #f8f8f8; border-radius: 5px;">
                     <p style="margin: 10px 0;"><strong>재고:</strong> <span th:text="${product.stock}"></span>개</p>
@@ -101,6 +117,76 @@
                 <div style="margin-top: 20px; text-align: center;">
                     <a href="/products" style="color: #667eea; text-decoration: none;">← 목록으로 돌아가기</a>
                 </div>
+            </div>
+        </div>
+        
+        <!-- 평점 및 리뷰 섹션 -->
+        <div style="margin-top: 40px; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #f0f0f0;">
+                <div>
+                    <h2 style="margin: 0 0 10px 0;">상품 리뷰</h2>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span style="font-size: 2rem; font-weight: bold; color: #667eea;">
+                                <span th:text="${product.averageRating != null ? #numbers.formatDecimal(product.averageRating, 1, 'POINT', 1, 'POINT') : '0.0'}"></span>
+                            </span>
+                            <span style="font-size: 1.2rem; color: #888;">/ 5.0</span>
+                        </div>
+                        <div style="color: #888;">
+                            총 <span th:text="${product.reviewCount ?: 0}"></span>개의 리뷰
+                        </div>
+                    </div>
+                </div>
+                <div sec:authorize="isAuthenticated()" th:if="${canReview != null and canReview}">
+                    <a th:href="@{/reviews/new(productId=${product.id})}" class="btn-primary">리뷰 작성하기</a>
+                </div>
+                <div sec:authorize="isAuthenticated()" th:if="${canReview == null or !canReview}" style="color: #888; font-size: 0.9rem;">
+                    주문하신 상품에만 리뷰를 작성할 수 있습니다.
+                </div>
+            </div>
+            
+            <!-- 리뷰 목록 -->
+            <div th:if="${reviews != null and !reviews.isEmpty()}">
+                <div th:each="review : ${reviews}" style="padding: 20px 0; border-bottom: 1px solid #f0f0f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <div>
+                            <strong th:text="${review.user.username}"></strong>
+                            <div style="display: flex; gap: 3px; margin-top: 5px;">
+                                <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                      style="color: #FFD700; font-size: 1.2rem;"
+                                      th:text="${i <= review.rating} ? '★' : '☆'"></span>
+                                <span style="margin-left: 5px; color: #888; font-size: 0.9rem;">
+                                    (<span th:text="${review.rating}"></span>점)
+                                </span>
+                            </div>
+                        </div>
+                        <div style="color: #888; font-size: 0.9rem;">
+                            <span th:text="${#temporals.format(review.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+                            <span th:if="${review.updatedAt != review.createdAt}" style="margin-left: 5px; color: #999;">
+                                (수정됨)
+                            </span>
+                        </div>
+                    </div>
+                    <div style="color: #333; line-height: 1.6; white-space: pre-wrap;" th:text="${review.content}"></div>
+                    <div sec:authorize="isAuthenticated()" 
+                         th:if="${review.user.username == authentication.name}" 
+                         style="margin-top: 10px;">
+                        <a th:href="@{/reviews/{id}/edit(id=${review.id})}" 
+                           class="btn-small btn-edit" 
+                           style="padding: 5px 10px; font-size: 0.9rem;">수정</a>
+                        <form th:action="@{/reviews/{id}/delete(id=${review.id})}" 
+                              method="post" 
+                              style="display: inline;"
+                              onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                            <button type="submit" class="btn-small btn-delete" style="padding: 5px 10px; font-size: 0.9rem;">삭제</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div th:if="${reviews == null or reviews.isEmpty()}" style="text-align: center; padding: 40px; color: #888;">
+                <p>아직 작성된 리뷰가 없습니다.</p>
+                <p sec:authorize="!isAuthenticated()">리뷰를 작성하려면 로그인이 필요합니다.</p>
             </div>
         </div>
     </div>
