@@ -5,6 +5,7 @@ import com.shoppingmall.repository.OrderRepository;
 import com.shoppingmall.repository.ProductRepository;
 import com.shoppingmall.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -175,6 +176,44 @@ public class OrderService {
     // 주문 저장
     public Order saveOrder(Order order) {
         return orderRepository.save(order);
+    }
+    
+    // 배송 정보 업데이트 (관리자용)
+    public Order updateShippingInfo(Long orderId, String trackingCompany, String trackingNumber) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
+        
+        order.setTrackingCompany(trackingCompany);
+        order.setTrackingNumber(trackingNumber);
+        
+        // 송장번호가 입력되면 배송중 상태로 변경
+        if (trackingNumber != null && !trackingNumber.isEmpty()) {
+            order.setStatus(Order.OrderStatus.SHIPPED);
+            order.setShippedAt(LocalDateTime.now());
+        }
+        
+        return orderRepository.save(order);
+    }
+    
+    // 배송 상태 업데이트 (API로 조회한 결과 반영)
+    public Order updateDeliveryStatus(Long orderId, boolean isDelivered) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
+        
+        if (isDelivered) {
+            order.setStatus(Order.OrderStatus.DELIVERED);
+            order.setDeliveredAt(LocalDateTime.now());
+        } else {
+            order.setStatus(Order.OrderStatus.SHIPPED);
+        }
+        
+        return orderRepository.save(order);
+    }
+    
+    // 모든 주문 조회 (관리자용)
+    @Transactional(readOnly = true)
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 }
 

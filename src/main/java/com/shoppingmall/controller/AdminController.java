@@ -5,8 +5,11 @@ import com.shoppingmall.dto.ProductDto;
 import com.shoppingmall.entity.Coupon;
 import com.shoppingmall.entity.Product;
 import com.shoppingmall.entity.User;
+import com.shoppingmall.entity.Order;
 import com.shoppingmall.service.CouponService;
+import com.shoppingmall.service.DeliveryTrackingService;
 import com.shoppingmall.service.FileStorageService;
+import com.shoppingmall.service.OrderService;
 import com.shoppingmall.service.ProductService;
 import com.shoppingmall.service.UserService;
 import jakarta.validation.Valid;
@@ -35,6 +38,8 @@ public class AdminController {
     private final CouponService couponService;
     private final UserService userService;
     private final FileStorageService fileStorageService;
+    private final OrderService orderService;
+    private final DeliveryTrackingService deliveryTrackingService;
     
     @GetMapping("/products")
     public String productList(@RequestParam(defaultValue = "0") int page,
@@ -367,6 +372,112 @@ public class AdminController {
             return "redirect:/admin/coupons/" + couponId + "/issue";
         }
         return "redirect:/admin/coupons";
+    }
+    
+    // ========== 주문 관리 ==========
+    
+    @GetMapping("/orders")
+    public String orderList(@RequestParam(required = false) String search,
+                           @RequestParam(required = false) String status,
+                           Model model) {
+        List<Order> orders;
+        
+        if (search != null && !search.isEmpty()) {
+            // 주문번호나 사용자명으로 검색
+            orders = orderService.getAllOrders().stream()
+                    .filter(order -> order.getOrderNumber().contains(search) ||
+                                   order.getUser().getUsername().contains(search) ||
+                                   (order.getTrackingNumber() != null && order.getTrackingNumber().contains(search)))
+                    .collect(java.util.stream.Collectors.toList());
+            model.addAttribute("search", search);
+        } else {
+            orders = orderService.getAllOrders();
+        }
+        
+        // 상태별 필터링
+        if (status != null && !status.isEmpty()) {
+            Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status);
+            orders = orders.stream()
+                    .filter(order -> order.getStatus() == orderStatus)
+                    .collect(java.util.stream.Collectors.toList());
+            model.addAttribute("statusFilter", status);
+        }
+        
+        model.addAttribute("orders", orders);
+        model.addAttribute("orderStatuses", Order.OrderStatus.values());
+        return "admin/order-list";
+    }
+    
+    @GetMapping("/orders/{id}")
+    public String orderDetail(@PathVariable Long id, Model model) {
+        Order order = orderService.getOrder(id);
+        model.addAttribute("order", order);
+        
+        // 배송 추적 URL 생성 (API 키 불필요)
+        if (order.getTrackingCompany() != null && order.getTrackingNumber() != null) {
+            String trackingUrl = deliveryTrackingService.getTrackingUrl(
+                    order.getTrackingCompany(), 
+                    order.getTrackingNumber()
+            );
+            model.addAttribute("trackingUrl", trackingUrl);
+        }
+        
+        return "admin/order-detail";
+    }
+    
+    @PostMapping("/orders/{id}/tracking")
+    public String updateTrackingInfo(@PathVariable Long id,
+                                    @RequestParam String trackingCompany,
+                                    @RequestParam String trackingNumber,
+                                    @RequestParam(required = false, defaultValue = "false") Boolean checkTracking,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            // 배송 정보 업데이트
+            orderService.updateShippingInfo(id, trackingCompany, trackingNumber);
+            
+            // 배송 추적 확인 요청 시 API 호출
+            if (checkTracking && trackingNumber != null && !trackingNumber.isEmpty()) {
+                try {
+                    DeliveryTrackingService.DeliveryTrackingResult result = 
+                            deliveryTrackingService.trackDelivery(trackingCompany, trackingNumber);
+                    
+                    // 배송 상태 업데이트
+                    orderService.updateDeliveryStatus(id, result.isDelivered());
+                    
+                    if (result.isDelivered()) {
+                        redirectAttributes.addFlashAttribute("success", 
+                                "배송 정보가 업데이트되었습니다. 배송이 완료되었습니다.");
+                    } else {
+                        redirectAttributes.addFlashAttribute("success", 
+                                "배송 정보가 업데이트되었습니다. 현재 배송중입니다.");
+                    }
+                } catch (Exception e) {
+                    redirectAttributes.addFlashAttribute("warning", 
+                            "배송 정보는 저장되었지만 배송 추적 조회에 실패했습니다: " + e.getMessage());
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("success", "배송 정보가 업데이트되었습니다.");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "배송 정보 업데이트 실패: " + e.getMessage());
+        }
+        return "redirect:/admin/orders/" + id;
+    }
+    
+    @PostMapping("/orders/{id}/status")
+    public String updateOrderStatus(@PathVariable Long id,
+                                    @RequestParam Order.OrderStatus status,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            Order order = orderService.getOrder(id);
+            order.setStatus(status);
+            orderService.saveOrder(order);
+            
+            redirectAttributes.addFlashAttribute("success", "주문 상태가 변경되었습니다.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "주문 상태 변경 실패: " + e.getMessage());
+        }
+        return "redirect:/admin/orders/" + id;
     }
 }
 

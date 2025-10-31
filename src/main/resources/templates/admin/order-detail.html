@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 상세 - 관리자</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall - 관리자</a>
+            <nav class="nav-links">
+                <a href="/admin/products">상품 관리</a>
+                <a href="/admin/coupons">쿠폰 관리</a>
+                <a href="/admin/orders">주문 관리</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Order Detail -->
+    <div class="container" style="margin-top: 40px; max-width: 1000px;">
+        <h2 style="margin-bottom: 30px;">주문 상세</h2>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <div th:if="${warning}" class="alert alert-warning" th:text="${warning}" style="background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;"></div>
+        
+        <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #f0f0f0;">
+                <div>
+                    <h3>주문번호: <span th:text="${order.orderNumber}"></span></h3>
+                    <p style="color: #888; margin-top: 5px;" th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm:ss')}"></p>
+                    <p style="color: #888; margin-top: 5px;">주문자: <span th:text="${order.user.username}"></span></p>
+                </div>
+                <div>
+                    <span th:switch="${order.status.name()}" style="padding: 8px 20px; border-radius: 20px; font-weight: 600; font-size: 1rem;">
+                        <span th:case="'PENDING'" style="color: #888;">대기중</span>
+                        <span th:case="'PAID'" style="color: #2196F3;">결제완료</span>
+                        <span th:case="'PROCESSING'" style="color: #FF9800;">처리중</span>
+                        <span th:case="'SHIPPED'" style="color: #9C27B0;">배송중</span>
+                        <span th:case="'DELIVERED'" style="color: #4CAF50;">배송완료</span>
+                        <span th:case="'CANCELLED'" style="color: #F44336;">취소됨</span>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- 주문 상태 변경 -->
+            <div style="margin-bottom: 30px; padding: 20px; background: #f8f8f8; border-radius: 8px;">
+                <h4 style="margin-bottom: 15px;">주문 상태 변경</h4>
+                <form th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" style="display: flex; gap: 10px; align-items: center;">
+                    <select name="status" style="padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; cursor: pointer;">
+                        <option th:each="status : ${T(com.shoppingmall.entity.Order$OrderStatus).values()}"
+                                th:value="${status.name()}"
+                                th:text="${status}"
+                                th:selected="${order.status.name() == status.name()}"></option>
+                    </select>
+                    <button type="submit" class="btn-primary">상태 변경</button>
+                </form>
+            </div>
+            
+            <!-- 배송 정보 입력/수정 -->
+            <div style="margin-bottom: 30px; padding: 20px; background: #f8f8f8; border-radius: 8px;">
+                <h4 style="margin-bottom: 15px;">배송 정보</h4>
+                <form th:action="@{/admin/orders/{id}/tracking(id=${order.id})}" method="post">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label for="trackingCompany" style="display: block; margin-bottom: 5px; font-weight: 500;">배송사</label>
+                            <select id="trackingCompany" name="trackingCompany" 
+                                    style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px;">
+                                <option value="">선택하세요</option>
+                                <option value="CJ대한통운" th:selected="${order.trackingCompany == 'CJ대한통운'}">CJ대한통운</option>
+                                <option value="한진택배" th:selected="${order.trackingCompany == '한진택배'}">한진택배</option>
+                                <option value="로젠택배" th:selected="${order.trackingCompany == '로젠택배'}">로젠택배</option>
+                                <option value="롯데택배" th:selected="${order.trackingCompany == '롯데택배'}">롯데택배</option>
+                                <option value="우체국택배" th:selected="${order.trackingCompany == '우체국택배'}">우체국택배</option>
+                                <option value="CU편의점택배" th:selected="${order.trackingCompany == 'CU편의점택배'}">CU편의점택배</option>
+                                <option value="GS25편의점택배" th:selected="${order.trackingCompany == 'GS25편의점택배'}">GS25편의점택배</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="trackingNumber" style="display: block; margin-bottom: 5px; font-weight: 500;">송장번호</label>
+                            <input type="text" id="trackingNumber" name="trackingNumber" 
+                                   th:value="${order.trackingNumber}"
+                                   placeholder="송장번호를 입력하세요"
+                                   style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="checkTracking" value="true">
+                            <span>배송 추적 API로 상태 확인</span>
+                        </label>
+                        <small style="display: block; margin-top: 5px; color: #666;">
+                            체크하면 배송 추적 API를 호출하여 배송 상태를 자동으로 업데이트합니다. 
+                            <strong>(API 키 필요 - 사업자 등록 필요)</strong>
+                        </small>
+                    </div>
+                    <button type="submit" class="btn-primary">배송 정보 저장</button>
+                </form>
+                
+                <div th:if="${order.trackingNumber != null}" style="margin-top: 20px; padding: 15px; background: white; border-radius: 5px;">
+                    <p><strong>현재 배송사:</strong> <span th:text="${order.trackingCompany ?: '-'}"></span></p>
+                    <p><strong>현재 송장번호:</strong> <span th:text="${order.trackingNumber}"></span></p>
+                    <p th:if="${order.shippedAt != null}">
+                        <strong>배송 시작:</strong> 
+                        <span th:text="${#temporals.format(order.shippedAt, 'yyyy-MM-dd HH:mm')}"></span>
+                    </p>
+                    <p th:if="${order.deliveredAt != null}">
+                        <strong>배송 완료:</strong> 
+                        <span th:text="${#temporals.format(order.deliveredAt, 'yyyy-MM-dd HH:mm')}"></span>
+                    </p>
+                    <!-- 배송 추적 링크 (API 키 불필요 - 각 택배사 웹사이트로 연결) -->
+                    <div th:if="${trackingUrl != null}" style="margin-top: 15px;">
+                        <a th:href="${trackingUrl}" 
+                           target="_blank"
+                           class="btn-primary" 
+                           style="display: inline-block; text-decoration: none;">
+                            🔍 배송 추적하기 (택배사 사이트)
+                        </a>
+                        <small style="display: block; margin-top: 8px; color: #666;">
+                            각 택배사 공식 사이트로 이동하여 배송 정보를 확인할 수 있습니다. (API 키 불필요)
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 주문 상품 목록 -->
+            <h4 style="margin-bottom: 15px;">주문 상품</h4>
+            <div th:each="item : ${order.items}" style="display: flex; gap: 20px; padding: 15px 0; border-bottom: 1px solid #eee;">
+                <div style="flex: 1;">
+                    <p style="font-weight: 500; font-size: 1.1rem;" th:text="${item.productName}"></p>
+                    <p style="color: #888; margin-top: 5px;">
+                        <span th:text="|${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                        × <span th:text="${item.quantity}"></span>개
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="font-size: 1.2rem; font-weight: bold; color: #667eea;">
+                        <span th:text="|${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- 배송 정보 -->
+            <div style="margin-top: 20px; padding: 20px; background: #f8f8f8; border-radius: 8px;">
+                <h4 style="margin-bottom: 10px;">배송지 정보</h4>
+                <p style="margin: 5px 0;"><strong>주소:</strong> <span th:text="${order.shippingAddress}"></span></p>
+                <p style="margin: 5px 0;"><strong>연락처:</strong> <span th:text="${order.phoneNumber}"></span></p>
+            </div>
+            
+            <!-- 결제 정보 -->
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #667eea; text-align: right;">
+                <div th:if="${order.discountAmount > 0}" style="margin-bottom: 10px; color: #888;">
+                    <span>할인 금액: </span>
+                    <span th:text="|${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'POINT')}원|" style="color: #f44336;"></span>
+                </div>
+                <h3 style="color: #667eea; font-size: 1.5rem;">
+                    총 결제 금액: <span th:text="|${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                </h3>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/admin/orders" class="btn-primary">주문 목록으로</a>
+        </div>
+    </div>
+</body>
+</html>
+

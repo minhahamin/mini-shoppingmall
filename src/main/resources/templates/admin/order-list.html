@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 관리 - 관리자</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall - 관리자</a>
+            <nav class="nav-links">
+                <a href="/admin/products">상품 관리</a>
+                <a href="/admin/coupons">쿠폰 관리</a>
+                <a href="/admin/orders">주문 관리</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h2 style="margin: 40px 0 20px 0;">주문 관리</h2>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <!-- 검색 및 필터 -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0; gap: 15px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <form action="/admin/orders" method="get" style="display: flex; gap: 10px;">
+                    <input type="text" name="search" th:value="${search}" 
+                           placeholder="주문번호/사용자/송장번호 검색..." 
+                           style="padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; width: 300px;">
+                    <button type="submit" class="btn-primary">검색</button>
+                    <a href="/admin/orders" th:if="${search != null}" class="btn-primary" 
+                       style="margin: 0; background: #888; text-decoration: none; display: inline-block; padding: 10px 20px;">초기화</a>
+                </form>
+            </div>
+            <div>
+                <form action="/admin/orders" method="get" style="display: flex; gap: 10px; align-items: center;">
+                    <label style="font-weight: 500;">상태 필터:</label>
+                    <select name="status" onchange="this.form.submit()" 
+                            style="padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; cursor: pointer;">
+                        <option value="">전체</option>
+                        <option th:each="status : ${orderStatuses}" 
+                                th:value="${status}" 
+                                th:text="${status}"
+                                th:selected="${statusFilter == status.name()}"></option>
+                    </select>
+                    <input type="hidden" name="search" th:value="${search}">
+                </form>
+            </div>
+        </div>
+        
+        <div style="margin: 10px 0; color: #666;">
+            <p>전체 <strong th:text="${orders.size()}"></strong>건의 주문</p>
+        </div>
+        
+        <div class="admin-table" style="overflow-x: auto;">
+            <table style="white-space: nowrap; min-width: 1200px;">
+                <thead>
+                    <tr>
+                        <th>주문번호</th>
+                        <th>주문자</th>
+                        <th>주문일시</th>
+                        <th>상태</th>
+                        <th>금액</th>
+                        <th>배송사</th>
+                        <th>송장번호</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="order : ${orders}">
+                        <td th:text="${order.orderNumber}"></td>
+                        <td th:text="${order.user.username}"></td>
+                        <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                        <td>
+                            <span th:switch="${order.status.name()}">
+                                <span th:case="'PENDING'" style="color: #888;">대기중</span>
+                                <span th:case="'PAID'" style="color: #2196F3;">결제완료</span>
+                                <span th:case="'PROCESSING'" style="color: #FF9800;">처리중</span>
+                                <span th:case="'SHIPPED'" style="color: #9C27B0;">배송중</span>
+                                <span th:case="'DELIVERED'" style="color: #4CAF50;">배송완료</span>
+                                <span th:case="'CANCELLED'" style="color: #F44336;">취소됨</span>
+                            </span>
+                        </td>
+                        <td th:text="|${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                        <td th:text="${order.trackingCompany ?: '-'}"></td>
+                        <td th:text="${order.trackingNumber ?: '-'}"></td>
+                        <td>
+                            <a th:href="@{/admin/orders/{id}(id=${order.id})}" 
+                               class="btn-small btn-edit">상세</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div th:if="${orders.isEmpty()}" style="text-align: center; padding: 40px; color: #777;">
+            <p>주문 내역이 없습니다.</p>
+        </div>
+    </div>
+</body>
+</html>
+

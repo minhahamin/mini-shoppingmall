@@ -71,6 +71,18 @@ public class Order {
     @Column
     private LocalDateTime paidAt;
     
+    @Column(name = "tracking_company")
+    private String trackingCompany;  // 배송사 (CJ대한통운, 한진택배, 로젠택배 등)
+    
+    @Column(name = "tracking_number")
+    private String trackingNumber;  // 송장번호
+    
+    @Column(name = "shipped_at")
+    private LocalDateTime shippedAt;  // 배송 시작일시
+    
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;  // 배송 완료일시
+    
     public enum OrderStatus {
         PENDING,        // 대기중
         PAID,          // 결제완료
