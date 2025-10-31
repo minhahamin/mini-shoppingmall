@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드 - 매출 통계</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall - 관리자</a>
+            <nav class="nav-links">
+                <a href="/admin">대시보드</a>
+                <a href="/admin/products">상품 관리</a>
+                <a href="/admin/coupons">쿠폰 관리</a>
+                <a href="/admin/orders">주문 관리</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container" style="margin-top: 40px;">
+        <h2 style="margin-bottom: 30px;">관리자 대시보드</h2>
+        
+        <!-- 통계 카드 -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; opacity: 0.9;">전체 매출액</h3>
+                <p style="margin: 0; font-size: 2rem; font-weight: bold;">
+                    <span th:text="${#numbers.formatDecimal(totalRevenue != null ? totalRevenue : 0, 0, 'COMMA', 0, 'POINT')}"></span>원
+                </p>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; opacity: 0.9;">오늘 매출액</h3>
+                <p style="margin: 0; font-size: 2rem; font-weight: bold;">
+                    <span th:text="${#numbers.formatDecimal(todayRevenue != null ? todayRevenue : 0, 0, 'COMMA', 0, 'POINT')}"></span>원
+                </p>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; opacity: 0.9;">이번 달 매출액</h3>
+                <p style="margin: 0; font-size: 2rem; font-weight: bold;">
+                    <span th:text="${#numbers.formatDecimal(thisMonthRevenue != null ? thisMonthRevenue : 0, 0, 'COMMA', 0, 'POINT')}"></span>원
+                </p>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; opacity: 0.9;">총 주문 수</h3>
+                <p style="margin: 0; font-size: 2rem; font-weight: bold;">
+                    <span th:text="${totalOrderCount != null ? totalOrderCount : 0}"></span>건
+                </p>
+            </div>
+        </div>
+        
+        <!-- 추가 통계 카드 -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;">총 상품 수</h4>
+                <p style="margin: 0; font-size: 1.5rem; font-weight: bold; color: #667eea;">
+                    <span th:text="${totalProductCount != null ? totalProductCount : 0}"></span>개
+                </p>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;">총 회원 수</h4>
+                <p style="margin: 0; font-size: 1.5rem; font-weight: bold; color: #667eea;">
+                    <span th:text="${totalUserCount != null ? totalUserCount : 0}"></span>명
+                </p>
+            </div>
+        </div>
+        
+        <!-- 그래프 섹션 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+            <!-- 일별 매출 그래프 -->
+            <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h3 style="margin-bottom: 20px;">일별 매출 (최근 30일)</h3>
+                <canvas id="dailySalesChart" style="max-height: 300px;"></canvas>
+            </div>
+            
+            <!-- 월별 매출 그래프 -->
+            <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h3 style="margin-bottom: 20px;">월별 매출 (최근 12개월)</h3>
+                <canvas id="monthlySalesChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+        
+        <!-- 주문 상태별 통계 -->
+        <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 40px;">
+            <h3 style="margin-bottom: 20px;">주문 상태별 통계</h3>
+            <canvas id="orderStatusChart" style="max-height: 300px;"></canvas>
+        </div>
+        
+        <!-- 최근 주문 목록 -->
+        <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">최근 주문</h3>
+                <a href="/admin/orders" class="btn-primary" style="text-decoration: none;">전체 보기</a>
+            </div>
+            
+            <div class="admin-table" style="overflow-x: auto;">
+                <table style="white-space: nowrap; min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th>주문번호</th>
+                            <th>주문자</th>
+                            <th>주문일시</th>
+                            <th>상태</th>
+                            <th>금액</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="order : ${recentOrders}">
+                            <td th:text="${order.orderNumber}"></td>
+                            <td th:text="${order.user.username}"></td>
+                            <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                            <td>
+                                <span th:switch="${order.status.name()}">
+                                    <span th:case="'PENDING'" style="color: #888;">대기중</span>
+                                    <span th:case="'PAID'" style="color: #2196F3;">결제완료</span>
+                                    <span th:case="'PROCESSING'" style="color: #FF9800;">처리중</span>
+                                    <span th:case="'SHIPPED'" style="color: #9C27B0;">배송중</span>
+                                    <span th:case="'DELIVERED'" style="color: #4CAF50;">배송완료</span>
+                                    <span th:case="'CANCELLED'" style="color: #F44336;">취소됨</span>
+                                </span>
+                            </td>
+                            <td th:text="|${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                            <td>
+                                <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="btn-small btn-edit">상세</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div th:if="${recentOrders == null or recentOrders.isEmpty()}" style="text-align: center; padding: 40px; color: #777;">
+                <p>주문 내역이 없습니다.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script th:inline="javascript">
+        // 일별 매출 데이터
+        var dailySalesData = /*[[${dailySales}]]*/ [];
+        console.log('일별 매출 데이터:', dailySalesData);
+        
+        // 월별 매출 데이터
+        var monthlySalesData = /*[[${monthlySales}]]*/ [];
+        console.log('월별 매출 데이터:', monthlySalesData);
+        
+        // DOM이 로드된 후 차트 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // 일별 매출 차트
+            if (dailySalesData && dailySalesData.length > 0) {
+                const dailyLabels = dailySalesData.map(item => {
+                    try {
+                        const date = new Date(item.date + 'T00:00:00');
+                        if (isNaN(date.getTime())) {
+                            // 날짜 파싱 실패 시 원본 문자열 반환
+                            return item.date.substring(5).replace('-', '/');
+                        }
+                        return (date.getMonth() + 1) + '/' + date.getDate();
+                    } catch (e) {
+                        console.error('날짜 파싱 오류:', e, item.date);
+                        return item.date;
+                    }
+                });
+                const dailyAmounts = dailySalesData.map(item => item.total || 0);
+                
+                const dailySalesCtx = document.getElementById('dailySalesChart');
+                if (dailySalesCtx) {
+                    new Chart(dailySalesCtx.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: dailyLabels,
+                            datasets: [{
+                                label: '일별 매출 (원)',
+                                data: dailyAmounts,
+                                borderColor: 'rgb(102, 126, 234)',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return '매출: ' + context.parsed.y.toLocaleString() + '원';
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toLocaleString() + '원';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } else {
+                console.warn('일별 매출 데이터가 없습니다.');
+                const dailySalesCtx = document.getElementById('dailySalesChart');
+                if (dailySalesCtx) {
+                    const ctx = dailySalesCtx.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['데이터 없음'],
+                            datasets: [{
+                                label: '일별 매출 (원)',
+                                data: [0],
+                                borderColor: 'rgb(102, 126, 234)',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true
+                        }
+                    });
+                }
+            }
+            
+            // 월별 매출 차트
+            if (monthlySalesData && monthlySalesData.length > 0) {
+                const monthlyLabels = monthlySalesData.map(item => item.month || '');
+                const monthlyAmounts = monthlySalesData.map(item => item.total || 0);
+                
+                const monthlySalesCtx = document.getElementById('monthlySalesChart');
+                if (monthlySalesCtx) {
+                    new Chart(monthlySalesCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: monthlyLabels,
+                            datasets: [{
+                                label: '월별 매출 (원)',
+                                data: monthlyAmounts,
+                                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                                borderColor: 'rgb(102, 126, 234)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return '매출: ' + context.parsed.y.toLocaleString() + '원';
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toLocaleString() + '원';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } else {
+                console.warn('월별 매출 데이터가 없습니다.');
+                const monthlySalesCtx = document.getElementById('monthlySalesChart');
+                if (monthlySalesCtx) {
+                    const ctx = monthlySalesCtx.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['데이터 없음'],
+                            datasets: [{
+                                label: '월별 매출 (원)',
+                                data: [0],
+                                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                                borderColor: 'rgb(102, 126, 234)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true
+                        }
+                    });
+                }
+            }
+            
+            // 주문 상태별 통계
+            var orderStatistics = /*[[${orderStatistics}]]*/ {};
+            console.log('주문 상태별 통계:', orderStatistics);
+            
+            if (orderStatistics && Object.keys(orderStatistics).length > 0) {
+                const statusLabels = Object.keys(orderStatistics);
+                const statusCounts = Object.values(orderStatistics);
+                const statusColors = {
+                    'PENDING': 'rgba(136, 136, 136, 0.6)',
+                    'PAID': 'rgba(33, 150, 243, 0.6)',
+                    'PROCESSING': 'rgba(255, 152, 0, 0.6)',
+                    'SHIPPED': 'rgba(156, 39, 176, 0.6)',
+                    'DELIVERED': 'rgba(76, 175, 80, 0.6)',
+                    'CANCELLED': 'rgba(244, 67, 54, 0.6)'
+                };
+                
+                const statusChartCtx = document.getElementById('orderStatusChart');
+                if (statusChartCtx) {
+                    new Chart(statusChartCtx.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: statusLabels.map(status => {
+                                const statusNames = {
+                                    'PENDING': '대기중',
+                                    'PAID': '결제완료',
+                                    'PROCESSING': '처리중',
+                                    'SHIPPED': '배송중',
+                                    'DELIVERED': '배송완료',
+                                    'CANCELLED': '취소됨'
+                                };
+                                return statusNames[status] || status;
+                            }),
+                            datasets: [{
+                                data: statusCounts,
+                                backgroundColor: statusLabels.map(status => statusColors[status] || 'rgba(200, 200, 200, 0.6)')
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'right'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed || 0;
+                                            return label + ': ' + value + '건';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

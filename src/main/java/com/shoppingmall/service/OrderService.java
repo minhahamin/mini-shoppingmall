@@ -215,5 +215,119 @@ public class OrderService {
     public List<Order> getAllOrders() {
         return orderRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
+    
+    // 매출 통계 조회 (일별 - 최근 30일)
+    @Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> getDailySalesStatistics(int days) {
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusDays(days);
+        
+        List<Object[]> results = orderRepository.findDailySales(
+                Order.OrderStatus.PAID, startDate, endDate
+        );
+        
+        return results.stream().map(row -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            // 날짜 형식 변환
+            Object dateObj = row[0];
+            String dateStr;
+            if (dateObj instanceof java.sql.Date) {
+                dateStr = dateObj.toString();
+            } else if (dateObj instanceof java.time.LocalDate) {
+                dateStr = dateObj.toString();
+            } else {
+                dateStr = dateObj.toString();
+            }
+            map.put("date", dateStr);
+            map.put("total", ((BigDecimal) row[1]).setScale(0, java.math.RoundingMode.HALF_UP).longValue());
+            map.put("count", ((Number) row[2]).longValue());
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+    
+    // 매출 통계 조회 (월별 - 최근 12개월)
+    @Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> getMonthlySalesStatistics(int months) {
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusMonths(months);
+        
+        List<Object[]> results = orderRepository.findMonthlySales(
+                Order.OrderStatus.PAID.name(), startDate, endDate
+        );
+        
+        return results.stream().map(row -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("month", row[0] != null ? row[0].toString() : "");
+            
+            // BigDecimal 또는 Number 타입 처리
+            Object totalObj = row[1];
+            long total;
+            if (totalObj instanceof BigDecimal) {
+                total = ((BigDecimal) totalObj).setScale(0, java.math.RoundingMode.HALF_UP).longValue();
+            } else if (totalObj instanceof Number) {
+                total = ((Number) totalObj).longValue();
+            } else {
+                total = 0;
+            }
+            map.put("total", total);
+            
+            map.put("count", row[2] != null ? ((Number) row[2]).longValue() : 0L);
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+    
+    // 전체 매출액 조회
+    @Transactional(readOnly = true)
+    public BigDecimal getTotalRevenue() {
+        return orderRepository.getTotalRevenue(Order.OrderStatus.PAID);
+    }
+    
+    // 총 주문 수 조회
+    @Transactional(readOnly = true)
+    public Long getTotalOrderCount() {
+        return orderRepository.countByStatus(Order.OrderStatus.PAID);
+    }
+    
+    // 오늘 매출액
+    @Transactional(readOnly = true)
+    public BigDecimal getTodayRevenue() {
+        LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
+        
+        List<Object[]> results = orderRepository.findDailySales(
+                Order.OrderStatus.PAID, startOfDay, endOfDay
+        );
+        
+        if (results.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        
+        return ((BigDecimal) results.get(0)[1]);
+    }
+    
+    // 이번 달 매출액
+    @Transactional(readOnly = true)
+    public BigDecimal getThisMonthRevenue() {
+        LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime endOfMonth = LocalDateTime.now().plusMonths(1).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        
+        List<Object[]> results = orderRepository.findDailySales(
+                Order.OrderStatus.PAID, startOfMonth, endOfMonth
+        );
+        
+        return results.stream()
+                .map(row -> (BigDecimal) row[1])
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    
+    // 상태별 주문 통계
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getOrderStatisticsByStatus() {
+        java.util.Map<String, Long> stats = new java.util.HashMap<>();
+        for (Order.OrderStatus status : Order.OrderStatus.values()) {
+            stats.put(status.name(), orderRepository.countByStatus(status));
+        }
+        return stats;
+    }
 }
 

@@ -41,6 +41,44 @@ public class AdminController {
     private final OrderService orderService;
     private final DeliveryTrackingService deliveryTrackingService;
     
+    @GetMapping
+    public String dashboard(Model model) {
+        // 전체 매출액
+        model.addAttribute("totalRevenue", orderService.getTotalRevenue());
+        
+        // 총 주문 수
+        model.addAttribute("totalOrderCount", orderService.getTotalOrderCount());
+        
+        // 오늘 매출액
+        model.addAttribute("todayRevenue", orderService.getTodayRevenue());
+        
+        // 이번 달 매출액
+        model.addAttribute("thisMonthRevenue", orderService.getThisMonthRevenue());
+        
+        // 상태별 주문 통계
+        model.addAttribute("orderStatistics", orderService.getOrderStatisticsByStatus());
+        
+        // 일별 매출 통계 (최근 30일)
+        model.addAttribute("dailySales", orderService.getDailySalesStatistics(30));
+        
+        // 월별 매출 통계 (최근 12개월)
+        model.addAttribute("monthlySales", orderService.getMonthlySalesStatistics(12));
+        
+        // 최근 주문 목록 (최근 10개)
+        List<Order> recentOrders = orderService.getAllOrders().stream()
+                .limit(10)
+                .collect(java.util.stream.Collectors.toList());
+        model.addAttribute("recentOrders", recentOrders);
+        
+        // 총 상품 수
+        model.addAttribute("totalProductCount", productService.getAllProducts().size());
+        
+        // 총 회원 수
+        model.addAttribute("totalUserCount", userService.getAllRegularUsers().size());
+        
+        return "admin/dashboard";
+    }
+    
     @GetMapping("/products")
     public String productList(@RequestParam(defaultValue = "0") int page,
                               @RequestParam(defaultValue = "10") int size,
