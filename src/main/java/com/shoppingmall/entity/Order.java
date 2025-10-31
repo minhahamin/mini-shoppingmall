@@ -57,6 +57,13 @@ public class Order {
     @Column(name = "cart_item_ids", columnDefinition = "TEXT")
     private String cartItemIds;  // 주문한 장바구니 항목 ID들 (쉼표로 구분)
     
+    @Column(name = "user_coupon_id")
+    private Long userCouponId;  // 사용한 쿠폰 ID
+    
+    @Column(name = "discount_amount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;  // 할인 금액
+    
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

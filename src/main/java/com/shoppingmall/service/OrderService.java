@@ -24,7 +24,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     
     // 주문 생성 (재고 확인만, CartItem ID들 저장)
-    public Order createOrder(String username, List<CartItem> cartItems, String address, String phone) {
+    public Order createOrder(String username, List<CartItem> cartItems, String address, String phone, Long userCouponId, BigDecimal discountAmount) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
         
@@ -47,9 +47,19 @@ public class OrderService {
         String orderNumber = generateOrderNumber();
         
         // 총 금액 계산
-        BigDecimal totalAmount = cartItems.stream()
+        BigDecimal subtotal = cartItems.stream()
                 .map(CartItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        // 할인 금액 적용 (할인 금액이 총액보다 크면 안됨)
+        if (discountAmount == null) {
+            discountAmount = BigDecimal.ZERO;
+        }
+        if (discountAmount.compareTo(subtotal) > 0) {
+            discountAmount = subtotal;
+        }
+        
+        BigDecimal totalAmount = subtotal.subtract(discountAmount);
         
         // CartItem ID들을 문자열로 저장
         String cartItemIds = cartItems.stream()
@@ -66,6 +76,8 @@ public class OrderService {
                 .shippingAddress(address)
                 .phoneNumber(phone)
                 .cartItemIds(cartItemIds)  // CartItem ID들 저장
+                .userCouponId(userCouponId)  // 사용한 쿠폰 ID
+                .discountAmount(discountAmount)  // 할인 금액
                 .build();
         
         // 주문 항목 추가
@@ -123,6 +135,11 @@ public class OrderService {
         order.setPaymentIntentId(paymentIntentId);
         order.setPaidAt(LocalDateTime.now());
         orderRepository.save(order);
+    }
+    
+    // 주문 생성 (쿠폰 없이)
+    public Order createOrder(String username, List<CartItem> cartItems, String address, String phone) {
+        return createOrder(username, cartItems, address, phone, null, BigDecimal.ZERO);
     }
     
     // Stripe Session ID로 주문 찾기

@@ -52,10 +52,44 @@
                 </div>
             </div>
             
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #667eea; text-align: right;">
-                <h3 style="color: #667eea;">
-                    총 결제 금액: <span th:text="|${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT')}원|"></span>
-                </h3>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #667eea;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span>상품 합계:</span>
+                    <span id="subtotal" th:text="|${#numbers.formatDecimal(subtotal, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #e74c3c;">
+                    <span>할인 금액:</span>
+                    <span id="discount">-0원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 2px solid #667eea; font-size: 1.2rem; font-weight: bold;">
+                    <span style="color: #667eea;">총 결제 금액:</span>
+                    <span id="total" style="color: #667eea;" th:text="|${#numbers.formatDecimal(subtotal, 0, 'COMMA', 0, 'POINT')}원|"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 쿠폰 선택 -->
+        <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <h3 style="margin-bottom: 20px; color: #667eea;">쿠폰 선택</h3>
+            <div th:if="${usableCoupons.isEmpty()}" style="color: #999; padding: 20px; text-align: center;">
+                사용 가능한 쿠폰이 없습니다
+            </div>
+            <div th:if="${!usableCoupons.isEmpty()}">
+                <select id="couponSelect" name="userCouponId" 
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem;"
+                        onchange="calculateDiscount()">
+                    <option value="">쿠폰을 선택하세요</option>
+                    <option th:each="uc : ${usableCoupons}" 
+                            th:value="${uc.id}"
+                            th:data-discount-type="${uc.coupon.discountType}"
+                            th:data-discount-value="${uc.coupon.discountValue}"
+                            th:data-min-amount="${uc.coupon.minPurchaseAmount}"
+                            th:text="|${uc.coupon.name} - ${uc.coupon.code}|">
+                    </option>
+                </select>
+                <div id="couponInfo" style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px; display: none;">
+                    <small id="couponDescription"></small>
+                </div>
             </div>
         </div>
         
@@ -63,9 +97,11 @@
         <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
             <h3 style="margin-bottom: 20px; color: #667eea;">배송 정보</h3>
             
-            <form th:action="@{/order/create}" method="post">
+            <form th:action="@{/order/create}" method="post" id="orderForm">
                 <!-- Hidden: 선택된 상품 ID들 -->
                 <input type="hidden" th:each="item : ${items}" name="itemIds" th:value="${item.id}" />
+                <input type="hidden" id="userCouponId" name="userCouponId" value="" />
+                <input type="hidden" id="subtotalValue" th:value="${subtotal}" />
                 
                 <div class="form-group">
                     <label for="address">배송 주소 *</label>
@@ -99,6 +135,85 @@
         </div>
     </div>
     <script src="/js/dropdown.js"></script>
+    <script>
+        function calculateDiscount() {
+            const select = document.getElementById('couponSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            const subtotalValue = parseFloat(document.getElementById('subtotalValue').value);
+            const discountSpan = document.getElementById('discount');
+            const totalSpan = document.getElementById('total');
+            const couponInfo = document.getElementById('couponInfo');
+            const couponDescription = document.getElementById('couponDescription');
+            const userCouponIdInput = document.getElementById('userCouponId');
+            
+            if (!selectedOption.value) {
+                // 쿠폰 선택 안함
+                discountSpan.textContent = '-0원';
+                totalSpan.textContent = formatNumber(subtotalValue) + '원';
+                couponInfo.style.display = 'none';
+                userCouponIdInput.value = '';
+                return;
+            }
+            
+            const discountType = selectedOption.getAttribute('data-discount-type');
+            const discountValue = parseFloat(selectedOption.getAttribute('data-discount-value'));
+            const minAmount = parseFloat(selectedOption.getAttribute('data-min-amount'));
+            const couponName = selectedOption.text;
+            
+            userCouponIdInput.value = selectedOption.value;
+            
+            // 최소 구매 금액 확인
+            if (subtotalValue < minAmount) {
+                discountSpan.textContent = '-0원 (최소 구매금액 부족)';
+                discountSpan.style.color = '#e74c3c';
+                totalSpan.textContent = formatNumber(subtotalValue) + '원';
+                couponInfo.style.display = 'block';
+                couponDescription.textContent = '⚠️ 이 쿠폰은 ' + formatNumber(minAmount) + '원 이상 구매 시 사용 가능합니다.';
+                couponDescription.style.color = '#e74c3c';
+                return;
+            }
+            
+            // 할인 금액 계산
+            let discount = 0;
+            if (discountType === 'PERCENTAGE') {
+                discount = subtotalValue * discountValue / 100;
+            } else if (discountType === 'FIXED') {
+                discount = discountValue;
+            }
+            
+            // 할인 금액이 총액보다 크면 안됨
+            if (discount > subtotalValue) {
+                discount = subtotalValue;
+            }
+            
+            const total = subtotalValue - discount;
+            
+            discountSpan.textContent = '-' + formatNumber(discount) + '원';
+            discountSpan.style.color = '#27ae60';
+            totalSpan.textContent = formatNumber(total) + '원';
+            
+            // 쿠폰 정보 표시
+            couponInfo.style.display = 'block';
+            let description = '💝 ' + couponName;
+            if (minAmount > 0) {
+                description += ' (최소 구매: ' + formatNumber(minAmount) + '원)';
+            }
+            couponDescription.textContent = description;
+            couponDescription.style.color = '#27ae60';
+        }
+        
+        function formatNumber(num) {
+            return Math.round(num).toLocaleString('ko-KR');
+        }
+        
+        // 폼 제출 시 쿠폰 ID 전송
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            const userCouponId = document.getElementById('userCouponId').value;
+            if (userCouponId) {
+                // 이미 hidden input에 값이 있으므로 그대로 전송됨
+            }
+        });
+    </script>
 </body>
 </html>
 

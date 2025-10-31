@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보유 쿠폰 - 미니 쇼핑몰</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .coupon-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .coupon-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .coupon-card.used {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            opacity: 0.7;
+        }
+        
+        .coupon-info {
+            flex: 1;
+        }
+        
+        .coupon-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .coupon-code {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .coupon-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+        
+        .coupon-discount {
+            text-align: right;
+            padding-left: 20px;
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .discount-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .discount-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .coupon-status {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            font-size: 0.85rem;
+            display: inline-block;
+        }
+        
+        .coupon-status.usable {
+            background: rgba(46, 204, 113, 0.3);
+        }
+        
+        .coupon-status.used {
+            background: rgba(149, 165, 166, 0.3);
+        }
+        
+        .coupon-status.expired {
+            background: rgba(231, 76, 60, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall</a>
+            <nav class="nav-links">
+                <div class="dropdown" id="categoryDropdown">
+                    <a href="#" class="dropdown-toggle" onclick="toggleDropdown(event)">상품 ▼</a>
+                    <div class="dropdown-menu">
+                        <a href="/products">전체 상품</a>
+                        <a th:each="category : ${categories}" 
+                           th:href="@{/products(category=${category})}" 
+                           th:text="${category}"></a>
+                    </div>
+                </div>
+                <a href="/mypage" sec:authorize="isAuthenticated()">👤 마이페이지</a>
+                <a href="/admin/products" sec:authorize="hasRole('ADMIN')">관리자</a>
+                <a href="/login" sec:authorize="!isAuthenticated()" class="btn-login">로그인</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Coupons Content -->
+    <div class="coupon-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h2 style="margin: 0;">🎫 받은 쿠폰 목록</h2>
+            <a href="/mypage" style="padding: 10px 20px; background-color: #667eea; color: white; text-decoration: none; border-radius: 5px;">
+                ← 마이페이지로
+            </a>
+        </div>
+        
+        <div th:if="${coupons == null or coupons.isEmpty()}" style="text-align: center; padding: 60px 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="font-size: 4rem; margin-bottom: 20px;">🎫</div>
+            <h3 style="color: #666; margin-bottom: 10px;">받은 쿠폰이 없습니다</h3>
+            <p style="color: #999;">관리자가 쿠폰을 지급하면 여기에 표시됩니다.</p>
+        </div>
+        
+        <div th:if="${coupons != null and !coupons.isEmpty()}">
+            <div th:each="uc : ${coupons}" 
+                 th:if="${uc.coupon != null}"
+                 class="coupon-card"
+                 th:classappend="${uc.used or !uc.coupon.isUsable()} ? 'used' : ''">
+                <div class="coupon-info">
+                    <div class="coupon-name" th:text="${uc.coupon.name}"></div>
+                    <div class="coupon-code" th:text="|코드: ${uc.coupon.code}|"></div>
+                    <div class="coupon-description" th:if="${uc.coupon.description != null and !uc.coupon.description.isEmpty()}" 
+                         th:text="${uc.coupon.description}"></div>
+                    <div style="margin-top: 15px;">
+                        <span class="coupon-status" 
+                              th:classappend="${uc.used ? 'used' : (uc.coupon.isUsable() ? 'usable' : 'expired')}">
+                            <span th:if="${uc.used}">✅ 사용 완료</span>
+                            <span th:if="${!uc.used and uc.coupon.isUsable()}">✨ 사용 가능</span>
+                            <span th:if="${!uc.used and !uc.coupon.isUsable()}">❌ 만료됨</span>
+                        </span>
+                        <span style="margin-left: 10px; font-size: 0.85rem; opacity: 0.8;">
+                            유효기간: <span th:text="${#temporals.format(uc.coupon.validFrom, 'yyyy-MM-dd')} + ' ~ ' + ${#temporals.format(uc.coupon.validTo, 'yyyy-MM-dd')}"></span>
+                        </span>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.85rem; opacity: 0.7;">
+                        받은 날짜: <span th:text="${#temporals.format(uc.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+                    </div>
+                </div>
+                <div class="coupon-discount">
+                    <div class="discount-value">
+                        <span th:if="${uc.coupon.discountType.toString() == 'PERCENTAGE'}">
+                            <span th:text="${uc.coupon.discountValue}"></span>%
+                        </span>
+                        <span th:if="${uc.coupon.discountType.toString() == 'FIXED'}">
+                            <span th:text="${#numbers.formatDecimal(uc.coupon.discountValue, 0, 'COMMA', 0, 'POINT')}"></span>원
+                        </span>
+                    </div>
+                    <div class="discount-label">
+                        <span th:if="${uc.coupon.discountType.toString() == 'PERCENTAGE'}">할인</span>
+                        <span th:if="${uc.coupon.discountType.toString() == 'FIXED'}">할인</span>
+                    </div>
+                    <div th:if="${uc.coupon.minPurchaseAmount != null and uc.coupon.minPurchaseAmount.compareTo(0) > 0}" 
+                         style="margin-top: 10px; font-size: 0.85rem; opacity: 0.9;">
+                        최소 <span th:text="${#numbers.formatDecimal(uc.coupon.minPurchaseAmount, 0, 'COMMA', 0, 'POINT')} + '원'"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/dropdown.js"></script>
+</body>
+</html>
+

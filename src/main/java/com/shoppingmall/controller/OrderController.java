@@ -4,7 +4,9 @@ import com.shoppingmall.entity.Cart;
 import com.shoppingmall.entity.CartItem;
 import com.shoppingmall.entity.Order;
 import com.shoppingmall.entity.User;
+import com.shoppingmall.entity.UserCoupon;
 import com.shoppingmall.service.CartService;
+import com.shoppingmall.service.CouponService;
 import com.shoppingmall.service.OrderService;
 import com.shoppingmall.service.PaymentService;
 import com.shoppingmall.service.UserService;
@@ -18,6 +20,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +33,7 @@ public class OrderController {
     private final CartService cartService;
     private final PaymentService paymentService;
     private final UserService userService;
+    private final CouponService couponService;
     
     @Value("${app.base.url}")
     private String baseUrl;
@@ -65,12 +69,19 @@ public class OrderController {
         // 사용자 정보 불러오기 (배송 정보 자동 입력)
         User user = userService.getUserByUsername(authentication.getName());
         
-        model.addAttribute("items", selectedItems);
-        model.addAttribute("total", selectedItems.stream()
+        // 사용 가능한 쿠폰 목록 가져오기
+        List<UserCoupon> usableCoupons = couponService.getUsableCouponsByUser(authentication.getName());
+        
+        BigDecimal subtotal = selectedItems.stream()
                 .map(CartItem::getSubtotal)
-                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add));
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        model.addAttribute("items", selectedItems);
+        model.addAttribute("subtotal", subtotal);
+        model.addAttribute("total", subtotal);
         model.addAttribute("stripePublicKey", paymentService.getPublicKey());
         model.addAttribute("user", user);
+        model.addAttribute("usableCoupons", usableCoupons);
         
         return "order/checkout";
     }
@@ -80,6 +91,7 @@ public class OrderController {
     public String createOrder(@RequestParam List<Long> itemIds,
                              @RequestParam String address,
                              @RequestParam String phone,
+                             @RequestParam(required = false) Long userCouponId,
                              Authentication authentication,
                              RedirectAttributes redirectAttributes) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -99,8 +111,23 @@ public class OrderController {
                 return "redirect:/cart";
             }
             
+            // 쿠폰 할인 계산
+            BigDecimal subtotal = selectedItems.stream()
+                    .map(CartItem::getSubtotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            if (userCouponId != null) {
+                try {
+                    discountAmount = couponService.calculateDiscount(userCouponId, subtotal, authentication.getName());
+                } catch (Exception e) {
+                    redirectAttributes.addFlashAttribute("error", "쿠폰 적용 오류: " + e.getMessage());
+                    return "redirect:/order/checkout?itemIds=" + String.join(",", itemIds.stream().map(String::valueOf).collect(java.util.stream.Collectors.toList()));
+                }
+            }
+            
             // 주문 생성
-            Order order = orderService.createOrder(authentication.getName(), selectedItems, address, phone);
+            Order order = orderService.createOrder(authentication.getName(), selectedItems, address, phone, userCouponId, discountAmount);
             
             // Stripe 결제 세션 생성 (환경에 맞는 URL 사용)
             Session session = paymentService.createCheckoutSession(
@@ -133,6 +160,16 @@ public class OrderController {
         try {
             Order order = orderService.findByStripeSessionId(sessionId);
             orderService.markAsPaid(order.getId(), sessionId);
+            
+            // 쿠폰 사용 처리
+            if (order.getUserCouponId() != null) {
+                try {
+                    couponService.useCoupon(order.getUserCouponId(), order.getId(), authentication.getName());
+                } catch (Exception e) {
+                    // 쿠폰 사용 처리 실패는 로그만 남기고 계속 진행
+                    System.err.println("쿠폰 사용 처리 실패: " + e.getMessage());
+                }
+            }
             
             // 결제 완료 후 장바구니에서 주문한 항목만 제거
             if (order.getCartItemIds() != null && !order.getCartItemIds().isEmpty()) {

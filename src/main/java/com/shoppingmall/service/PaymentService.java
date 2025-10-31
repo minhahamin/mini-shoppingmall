@@ -34,23 +34,65 @@ public class PaymentService {
                 .putMetadata("orderId", order.getId().toString())
                 .putMetadata("orderNumber", order.getOrderNumber());
         
-        // 주문 항목을 라인 아이템으로 변환
+        // 할인 금액 계산
+        BigDecimal itemsTotal = BigDecimal.ZERO;
         for (var item : order.getItems()) {
-            SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
-                    .setQuantity(Long.valueOf(item.getQuantity()))
-                    .setPriceData(
-                        SessionCreateParams.LineItem.PriceData.builder()
-                            .setCurrency("krw")
-                            .setUnitAmount(item.getPrice().longValue()) // KRW는 최소 단위이므로 그대로 사용
-                            .setProductData(
-                                SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                                    .setName(item.getProductName())
-                                    .build()
-                            )
-                            .build()
-                    )
-                    .build();
-            builder.addLineItem(lineItem);
+            itemsTotal = itemsTotal.add(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+        
+        BigDecimal discountAmount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal finalAmount = itemsTotal.subtract(discountAmount);
+        
+        // 최종 금액이 0보다 커야 함
+        if (finalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("결제 금액은 0원보다 커야 합니다");
+        }
+        
+        // 할인이 있는 경우, 각 상품 가격을 비례적으로 조정하여 할인 반영
+        if (discountAmount.compareTo(BigDecimal.ZERO) > 0) {
+            // 할인 비율 계산
+            BigDecimal discountRatio = BigDecimal.ONE.subtract(discountAmount.divide(itemsTotal, 4, java.math.RoundingMode.HALF_UP));
+            
+            // 주문 항목을 라인 아이템으로 변환 (할인 반영)
+            for (var item : order.getItems()) {
+                BigDecimal originalPrice = item.getPrice();
+                BigDecimal discountedPrice = originalPrice.multiply(discountRatio).setScale(0, java.math.RoundingMode.HALF_UP);
+                
+                SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
+                        .setQuantity(Long.valueOf(item.getQuantity()))
+                        .setPriceData(
+                            SessionCreateParams.LineItem.PriceData.builder()
+                                .setCurrency("krw")
+                                .setUnitAmount(discountedPrice.longValue())
+                                .setProductData(
+                                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                        .setName(item.getProductName())
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build();
+                builder.addLineItem(lineItem);
+            }
+        } else {
+            // 할인이 없는 경우 원래대로
+            for (var item : order.getItems()) {
+                SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
+                        .setQuantity(Long.valueOf(item.getQuantity()))
+                        .setPriceData(
+                            SessionCreateParams.LineItem.PriceData.builder()
+                                .setCurrency("krw")
+                                .setUnitAmount(item.getPrice().longValue())
+                                .setProductData(
+                                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                        .setName(item.getProductName())
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build();
+                builder.addLineItem(lineItem);
+            }
         }
         
         Session session = Session.create(builder.build());

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿠폰 지급 - 관리자</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .coupon-info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .coupon-info-box h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.5rem;
+        }
+        
+        .coupon-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .coupon-detail-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .user-list-table {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .user-list-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .user-list-table th,
+        .user-list-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .user-list-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .user-list-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .select-all {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall - 관리자</a>
+            <nav class="nav-links">
+                <a href="/admin/products">상품 관리</a>
+                <a href="/admin/coupons">쿠폰 관리</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div style="margin: 40px 0 20px 0; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0;">쿠폰 지급</h2>
+            <a href="/admin/coupons" class="btn-primary" style="text-decoration: none;">← 쿠폰 목록</a>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <!-- 쿠폰 정보 -->
+        <div class="coupon-info-box">
+            <h3>🎫 <span th:text="${coupon.name}"></span></h3>
+            <div class="coupon-details">
+                <div class="coupon-detail-item">
+                    <strong>코드:</strong> <span th:text="${coupon.code}"></span>
+                </div>
+                <div class="coupon-detail-item">
+                    <strong>할인:</strong>
+                    <span th:if="${coupon.discountType.toString() == 'PERCENTAGE'}">
+                        <span th:text="${coupon.discountValue}"></span>%
+                    </span>
+                    <span th:if="${coupon.discountType.toString() == 'FIXED'}">
+                        <span th:text="${#numbers.formatDecimal(coupon.discountValue, 0, 'COMMA', 0, 'POINT')}"></span>원
+                    </span>
+                </div>
+                <div class="coupon-detail-item">
+                    <strong>최소 구매:</strong>
+                    <span th:text="${#numbers.formatDecimal(coupon.minPurchaseAmount, 0, 'COMMA', 0, 'POINT')} + '원'"></span>
+                </div>
+                <div class="coupon-detail-item">
+                    <strong>유효기간:</strong>
+                    <span th:text="${#temporals.format(coupon.validFrom, 'yyyy-MM-dd')} + ' ~ ' + ${#temporals.format(coupon.validTo, 'yyyy-MM-dd')}"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 회원 검색 -->
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <form action="" method="get" style="display: flex; gap: 10px; align-items: center;">
+                <input type="hidden" name="couponId" th:value="${coupon.id}">
+                <input type="text" name="search" th:value="${search}" 
+                       placeholder="회원 아이디, 이름, 이메일로 검색..." 
+                       style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px;">
+                <button type="submit" class="btn-primary" style="padding: 12px 30px;">검색</button>
+                <a th:href="@{/admin/coupons/{id}/issue(id=${coupon.id})}" 
+                   class="btn-primary" style="padding: 12px 20px; background: #888; text-decoration: none;">초기화</a>
+            </form>
+        </div>
+        
+        <!-- 회원 목록 -->
+        <form th:action="@{/admin/coupons/{couponId}/issue(couponId=${coupon.id})}" method="post">
+            <div class="user-list-table">
+                <div class="select-all">
+                    <div>
+                        <label style="cursor: pointer; font-weight: 600;">
+                            <input type="checkbox" id="selectAll" onchange="toggleAll(this)" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                            전체 선택
+                        </label>
+                    </div>
+                    <div>
+                        <span style="color: #667eea; font-weight: 600;">선택된 회원: <span id="selectedCount">0</span>명</span>
+                    </div>
+                </div>
+                
+                <div th:if="${users.isEmpty()}" style="text-align: center; padding: 40px; color: #777;">
+                    <p th:if="${search != null}">검색 결과가 없습니다.</p>
+                    <p th:if="${search == null}">등록된 회원이 없습니다.</p>
+                </div>
+                
+                <table th:if="${!users.isEmpty()}">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">
+                                <input type="checkbox" id="selectAllHeader" onchange="toggleAll(this)" style="cursor: pointer;">
+                            </th>
+                            <th>아이디</th>
+                            <th>이름</th>
+                            <th>이메일</th>
+                            <th>전화번호</th>
+                            <th>가입일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user : ${users}">
+                            <td>
+                                <input type="checkbox" name="usernames" th:value="${user.username}" 
+                                       class="user-checkbox" onchange="updateSelectedCount()" 
+                                       style="cursor: pointer;">
+                            </td>
+                            <td th:text="${user.username}"></td>
+                            <td th:text="${user.name}"></td>
+                            <td th:text="${user.email}"></td>
+                            <td>
+                                <span th:if="${user.phoneNumber != null and !user.phoneNumber.isEmpty()}" th:text="${user.phoneNumber}"></span>
+                                <span th:if="${user.phoneNumber == null or user.phoneNumber.isEmpty()}" style="color: #999;">-</span>
+                            </td>
+                            <td th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd')}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <a href="/admin/coupons" style="padding: 15px 30px; background-color: #888; color: white; text-decoration: none; border-radius: 5px; font-weight: 500;">
+                    취소
+                </a>
+                <button type="submit" 
+                        style="padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 5px; font-weight: 600; cursor: pointer;"
+                        onclick="return validateSelection()">
+                    선택한 회원에게 쿠폰 지급
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        function toggleAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+            document.getElementById('selectAll').checked = checkbox.checked;
+            document.getElementById('selectAllHeader').checked = checkbox.checked;
+            updateSelectedCount();
+        }
+        
+        function updateSelectedCount() {
+            const checked = document.querySelectorAll('.user-checkbox:checked').length;
+            document.getElementById('selectedCount').textContent = checked;
+            
+            // 전체 선택 체크박스 상태 업데이트
+            const allCheckboxes = document.querySelectorAll('.user-checkbox');
+            const allChecked = allCheckboxes.length > 0 && checked === allCheckboxes.length;
+            document.getElementById('selectAll').checked = allChecked;
+            document.getElementById('selectAllHeader').checked = allChecked;
+        }
+        
+        function validateSelection() {
+            const checked = document.querySelectorAll('.user-checkbox:checked').length;
+            if (checked === 0) {
+                alert('지급할 회원을 최소 1명 이상 선택해주세요.');
+                return false;
+            }
+            return confirm(checked + '명의 회원에게 쿠폰을 지급하시겠습니까?');
+        }
+        
+        // 페이지 로드 시 선택된 개수 업데이트
+        window.addEventListener('load', updateSelectedCount);
+    </script>
+    <script src="/js/dropdown.js"></script>
+</body>
+</html>
+

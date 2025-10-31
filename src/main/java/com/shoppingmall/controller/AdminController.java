@@ -1,8 +1,13 @@
 package com.shoppingmall.controller;
 
+import com.shoppingmall.dto.CouponDto;
 import com.shoppingmall.dto.ProductDto;
+import com.shoppingmall.entity.Coupon;
 import com.shoppingmall.entity.Product;
+import com.shoppingmall.entity.User;
+import com.shoppingmall.service.CouponService;
 import com.shoppingmall.service.ProductService;
+import com.shoppingmall.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +30,8 @@ import java.util.List;
 public class AdminController {
     
     private final ProductService productService;
+    private final CouponService couponService;
+    private final UserService userService;
     
     @GetMapping("/products")
     public String productList(@RequestParam(defaultValue = "0") int page,
@@ -137,6 +144,187 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", "상품 삭제에 실패했습니다: " + e.getMessage());
         }
         return "redirect:/admin/products?page=" + page + "&size=" + size;
+    }
+    
+    // ========== 쿠폰 관리 ==========
+    
+    @GetMapping("/coupons")
+    public String couponList(@RequestParam(required = false) String search,
+                            Model model) {
+        List<Coupon> coupons = couponService.getAllCoupons();
+        model.addAttribute("coupons", coupons);
+        
+        // 회원 목록도 함께 가져오기 (쿠폰 지급을 위해)
+        List<User> users;
+        if (search != null && !search.isEmpty()) {
+            users = userService.getAllRegularUsers().stream()
+                    .filter(user -> user.getUsername().contains(search) ||
+                                   user.getName().contains(search) ||
+                                   (user.getEmail() != null && user.getEmail().contains(search)))
+                    .collect(java.util.stream.Collectors.toList());
+            model.addAttribute("search", search);
+        } else {
+            users = userService.getAllRegularUsers();
+        }
+        model.addAttribute("users", users);
+        
+        return "admin/coupon-list";
+    }
+    
+    @GetMapping("/coupons/new")
+    public String createCouponForm(Model model) {
+        model.addAttribute("coupon", new CouponDto());
+        model.addAttribute("isEdit", false);
+        return "admin/coupon-form";
+    }
+    
+    @PostMapping("/coupons")
+    public String createCoupon(@Valid @ModelAttribute("coupon") CouponDto couponDto,
+                               BindingResult result,
+                               RedirectAttributes redirectAttributes,
+                               Model model) {
+        if (result.hasErrors()) {
+            model.addAttribute("isEdit", false);
+            return "admin/coupon-form";
+        }
+        
+        try {
+            Coupon coupon = Coupon.builder()
+                    .code(couponDto.getCode())
+                    .name(couponDto.getName())
+                    .description(couponDto.getDescription())
+                    .discountType(couponDto.getDiscountType())
+                    .discountValue(couponDto.getDiscountValue())
+                    .minPurchaseAmount(couponDto.getMinPurchaseAmount())
+                    .usageLimit(couponDto.getUsageLimit())
+                    .validFrom(couponDto.getValidFrom())
+                    .validTo(couponDto.getValidTo())
+                    .active(couponDto.getActive())
+                    .build();
+            
+            couponService.createCoupon(coupon);
+            redirectAttributes.addFlashAttribute("success", "쿠폰이 생성되었습니다");
+            return "redirect:/admin/coupons";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "쿠폰 생성에 실패했습니다: " + e.getMessage());
+            return "redirect:/admin/coupons/new";
+        }
+    }
+    
+    @GetMapping("/coupons/{id}/edit")
+    public String editCouponForm(@PathVariable Long id, Model model) {
+        Coupon coupon = couponService.getCoupon(id);
+        CouponDto couponDto = new CouponDto();
+        couponDto.setId(coupon.getId());
+        couponDto.setCode(coupon.getCode());
+        couponDto.setName(coupon.getName());
+        couponDto.setDescription(coupon.getDescription());
+        couponDto.setDiscountType(coupon.getDiscountType());
+        couponDto.setDiscountValue(coupon.getDiscountValue());
+        couponDto.setMinPurchaseAmount(coupon.getMinPurchaseAmount());
+        couponDto.setUsageLimit(coupon.getUsageLimit());
+        couponDto.setValidFrom(coupon.getValidFrom());
+        couponDto.setValidTo(coupon.getValidTo());
+        couponDto.setActive(coupon.getActive());
+        
+        model.addAttribute("coupon", couponDto);
+        model.addAttribute("isEdit", true);
+        return "admin/coupon-form";
+    }
+    
+    @PostMapping("/coupons/{id}")
+    public String updateCoupon(@PathVariable Long id,
+                              @Valid @ModelAttribute("coupon") CouponDto couponDto,
+                              BindingResult result,
+                              RedirectAttributes redirectAttributes,
+                              Model model) {
+        if (result.hasErrors()) {
+            model.addAttribute("isEdit", true);
+            return "admin/coupon-form";
+        }
+        
+        try {
+            Coupon coupon = Coupon.builder()
+                    .code(couponDto.getCode())
+                    .name(couponDto.getName())
+                    .description(couponDto.getDescription())
+                    .discountType(couponDto.getDiscountType())
+                    .discountValue(couponDto.getDiscountValue())
+                    .minPurchaseAmount(couponDto.getMinPurchaseAmount())
+                    .usageLimit(couponDto.getUsageLimit())
+                    .validFrom(couponDto.getValidFrom())
+                    .validTo(couponDto.getValidTo())
+                    .active(couponDto.getActive())
+                    .build();
+            
+            couponService.updateCoupon(id, coupon);
+            redirectAttributes.addFlashAttribute("success", "쿠폰이 수정되었습니다");
+            return "redirect:/admin/coupons";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "쿠폰 수정에 실패했습니다: " + e.getMessage());
+            return "redirect:/admin/coupons/" + id + "/edit";
+        }
+    }
+    
+    @PostMapping("/coupons/{id}/delete")
+    public String deleteCoupon(@PathVariable Long id,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            couponService.deleteCoupon(id);
+            redirectAttributes.addFlashAttribute("success", "쿠폰이 삭제되었습니다");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "쿠폰 삭제에 실패했습니다: " + e.getMessage());
+        }
+        return "redirect:/admin/coupons";
+    }
+    
+    // 쿠폰 지급 페이지
+    @GetMapping("/coupons/{couponId}/issue")
+    public String issueCouponPage(@PathVariable Long couponId,
+                                  @RequestParam(required = false) String search,
+                                  Model model) {
+        Coupon coupon = couponService.getCoupon(couponId);
+        List<User> users;
+        
+        if (search != null && !search.isEmpty()) {
+            // 검색 기능 (아이디, 이름, 이메일로 검색)
+            users = userService.getAllRegularUsers().stream()
+                    .filter(user -> user.getUsername().contains(search) ||
+                                   user.getName().contains(search) ||
+                                   (user.getEmail() != null && user.getEmail().contains(search)))
+                    .collect(java.util.stream.Collectors.toList());
+            model.addAttribute("search", search);
+        } else {
+            users = userService.getAllRegularUsers();
+        }
+        
+        model.addAttribute("coupon", coupon);
+        model.addAttribute("users", users);
+        return "admin/coupon-issue";
+    }
+    
+    // 회원에게 쿠폰 지급 (선택된 회원들)
+    @PostMapping("/coupons/{couponId}/issue")
+    public String issueCoupon(@PathVariable Long couponId,
+                              @RequestParam(required = false) List<String> usernames,
+                              @RequestParam(required = false, defaultValue = "false") Boolean issueToAll,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            if (issueToAll) {
+                couponService.issueCouponToAllUsers(couponId);
+                redirectAttributes.addFlashAttribute("success", "모든 회원에게 쿠폰이 지급되었습니다");
+            } else if (usernames != null && !usernames.isEmpty()) {
+                couponService.issueCouponToUsers(couponId, usernames);
+                redirectAttributes.addFlashAttribute("success", usernames.size() + "명의 회원에게 쿠폰이 지급되었습니다");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "회원을 선택해주세요");
+                return "redirect:/admin/coupons/" + couponId + "/issue";
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "쿠폰 지급에 실패했습니다: " + e.getMessage());
+            return "redirect:/admin/coupons/" + couponId + "/issue";
+        }
+        return "redirect:/admin/coupons";
     }
 }
 

@@ -2,8 +2,10 @@ package com.shoppingmall.controller;
 
 import com.shoppingmall.dto.UserUpdateDto;
 import com.shoppingmall.entity.User;
+import com.shoppingmall.entity.UserCoupon;
 import com.shoppingmall.entity.Wishlist;
 import com.shoppingmall.service.CartService;
+import com.shoppingmall.service.CouponService;
 import com.shoppingmall.service.OrderService;
 import com.shoppingmall.service.UserService;
 import com.shoppingmall.service.WishlistService;
@@ -25,6 +27,7 @@ public class MyPageController {
     private final WishlistService wishlistService;
     private final CartService cartService;
     private final OrderService orderService;
+    private final CouponService couponService;
     
     @GetMapping
     public String mypage(Authentication authentication, Model model) {
@@ -50,7 +53,32 @@ public class MyPageController {
         int orderCount = orderService.getUserPaidOrders(username).size();
         model.addAttribute("orderCount", orderCount);
         
+        // 보유 쿠폰 개수
+        List<UserCoupon> coupons = couponService.getAllCouponsByUser(username);
+        int usableCouponCount = (int) coupons.stream().filter(UserCoupon::isUsable).count();
+        model.addAttribute("couponCount", usableCouponCount);
+        
         return "mypage/index";
+    }
+    
+    @GetMapping("/coupons")
+    public String myCoupons(Authentication authentication, Model model) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        
+        User currentUser = userService.getUserByUsername(authentication.getName());
+        
+        // 관리자인 경우 관리자 경로로 리다이렉트
+        if ("ADMIN".equals(currentUser.getRole())) {
+            return "redirect:/admin/coupons";
+        }
+        
+        // 일반 회원인 경우: 자신이 받은 쿠폰 목록
+        List<UserCoupon> userCoupons = couponService.getAllCouponsByUser(authentication.getName());
+        model.addAttribute("coupons", userCoupons);
+        
+        return "mypage/coupons";
     }
     
     @GetMapping("/edit")

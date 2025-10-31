@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${isEdit ? '쿠폰 수정' : '쿠폰 생성'} + ' - 관리자'"></title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">🛍️ Mini Shopping Mall - 관리자</a>
+            <nav class="nav-links">
+                <a href="/admin/products">상품 관리</a>
+                <a href="/admin/coupons">쿠폰 관리</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Coupon Form -->
+    <div class="auth-container" style="max-width: 600px;">
+        <h2 th:text="${isEdit ? '쿠폰 수정' : '쿠폰 생성'}"></h2>
+        
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <form th:action="${isEdit ? '/admin/coupons/' + coupon.id : '/admin/coupons'}" 
+              th:object="${coupon}" method="post">
+            
+            <div class="form-group">
+                <label for="code">쿠폰 코드 *</label>
+                <input type="text" id="code" th:field="*{code}" required 
+                       placeholder="예: WELCOME10, SUMMER2024">
+                <div class="error" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="name">쿠폰 이름 *</label>
+                <input type="text" id="name" th:field="*{name}" required 
+                       placeholder="예: 신규회원 환영 쿠폰">
+                <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">쿠폰 설명</label>
+                <textarea id="description" th:field="*{description}" rows="3" 
+                          style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-family: inherit;"
+                          placeholder="쿠폰 사용 조건 등을 설명해주세요"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="discountType">할인 유형 *</label>
+                <select id="discountType" th:field="*{discountType}" required
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px;">
+                    <option value="">선택하세요</option>
+                    <option value="PERCENTAGE">퍼센트 할인 (%)</option>
+                    <option value="FIXED">고정 금액 할인 (원)</option>
+                </select>
+                <div class="error" th:if="${#fields.hasErrors('discountType')}" th:errors="*{discountType}"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="discountValue">할인 값 *</label>
+                <input type="number" id="discountValue" th:field="*{discountValue}" step="0.01" required 
+                       placeholder="퍼센트: 10 (10%), 고정금액: 5000 (5000원)">
+                <div class="error" th:if="${#fields.hasErrors('discountValue')}" th:errors="*{discountValue}"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="minPurchaseAmount">최소 구매 금액 (원) *</label>
+                <input type="number" id="minPurchaseAmount" th:field="*{minPurchaseAmount}" step="0.01" required 
+                       placeholder="0">
+                <div class="error" th:if="${#fields.hasErrors('minPurchaseAmount')}" th:errors="*{minPurchaseAmount}"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="usageLimit">사용 제한 횟수</label>
+                <input type="number" id="usageLimit" th:field="*{usageLimit}" min="1" 
+                       placeholder="비워두면 무제한">
+                <small style="color: #666;">비워두면 무제한으로 설정됩니다</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="validFrom">유효 시작일 *</label>
+                <input type="datetime-local" id="validFrom" name="validFrom" 
+                       th:value="${coupon?.validFrom != null ? #temporals.format(coupon.validFrom, 'yyyy-MM-dd') + 'T' + #temporals.format(coupon.validFrom, 'HH:mm') : ''}" 
+                       required>
+                <div class="error" th:if="${#fields.hasErrors('validFrom')}" th:errors="*{validFrom}"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="validTo">유효 종료일 *</label>
+                <input type="datetime-local" id="validTo" name="validTo" 
+                       th:value="${coupon?.validTo != null ? #temporals.format(coupon.validTo, 'yyyy-MM-dd') + 'T' + #temporals.format(coupon.validTo, 'HH:mm') : ''}" 
+                       required>
+                <div class="error" th:if="${#fields.hasErrors('validTo')}" th:errors="*{validTo}"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="active">활성화</label>
+                <div style="display: flex; align-items: center; padding: 12px 0;">
+                    <input type="checkbox" id="active" th:field="*{active}" 
+                           style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;">
+                    <label for="active" style="margin: 0; cursor: pointer; font-weight: normal;">쿠폰 활성화</label>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-submit" th:text="${isEdit ? '수정하기' : '생성하기'}"></button>
+        </form>
+        
+        <div class="form-footer">
+            <a href="/admin/coupons">목록으로 돌아가기</a>
+        </div>
+    </div>
+    <script src="/js/dropdown.js"></script>
+</body>
+</html>
+

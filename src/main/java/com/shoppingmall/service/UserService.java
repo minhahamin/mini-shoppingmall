@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -114,6 +116,20 @@ public class UserService {
         
         // 사용자 삭제 (CASCADE로 관련 데이터도 삭제됨)
         userRepository.delete(user);
+    }
+    
+    // 모든 회원 조회 (관리자용)
+    @Transactional(readOnly = true)
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+    
+    // 일반 회원만 조회 (관리자 제외)
+    @Transactional(readOnly = true)
+    public List<User> getAllRegularUsers() {
+        return userRepository.findAll().stream()
+                .filter(user -> "USER".equals(user.getRole()))
+                .collect(java.util.stream.Collectors.toList());
     }
 }
 
